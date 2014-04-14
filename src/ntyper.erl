@@ -387,7 +387,6 @@ foreachfms([], _Analysis, Acc) ->
 foreachfms([{File, Module} | Rest], Analysis, Acc) ->
   Info = get_final_info(File, Module, Analysis),
   TypeInfo = present_type_info(File, Info),
-  ?print(TypeInfo),
   foreachfms(Rest, Analysis, TypeInfo ++ Acc).
 
 get_final_info(File, Module, Analysis) ->
@@ -687,6 +686,7 @@ foreach([], _Info, Acc) ->
 foreach([{_LineNo, F, A} | Rest], Info, Acc) ->
   %% ?print(Info),
   %% TypeStr = get_type_string(F, A, Info, show),
+  ?print(F),
   TypeTup = get_type_tuple(F, A, Info, show),
   ?print(TypeTup),
   foreach(Rest, Info, [{F, A, TypeTup}] ++ Acc).
@@ -703,9 +703,9 @@ get_type_tuple(F, A, Info, _Mode) ->
       ?print(Return),
       {{args, Args}, {ret, Return}};
     {RetType, ArgType} ->
-      Sig = erl_types:t_fun(ArgType, RetType),
-      ?print(Sig),
-      dialyzer_utils:format_sig(Sig, Info#info.records)
+      ?print(RetType),
+      ?print(ArgType),
+      {{args, ArgType}, {ret, RetType}}
   end.
 
 get_type_info(Func, Types) ->

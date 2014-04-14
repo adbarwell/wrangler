@@ -155,7 +155,10 @@ getInputType({seq, Tuple}, File) ->
 		    ?print(Ret),
 		    Arg;
 		{error, Msg} ->
-		    ?print(Msg)
+		    io:format("error~n"),
+		    ?print(Msg);
+		X ->
+		    ?print(X)
 	    end;
 	false ->
 	    io:format("False~n")
@@ -174,7 +177,10 @@ getOutputType({seq, Tuple}, File) ->
 		    ?print(Ret),
 		    Ret;
 		{error, Msg} ->
-		    ?print(Msg)
+		    io:format("error~n"),
+		    ?print(Msg);
+		X ->
+		    ?print(X)
 	    end;
 	false ->
 	    io:format("False~n")
@@ -183,6 +189,8 @@ getOutputType({seq, Tuple}, File) ->
 areCompatible(any, _) ->
     true;
 areCompatible(_, any) ->
+    true;
+areCompatible({c, number, _, _}, {c, number, _, _}) ->
     true;
 areCompatible(X, Y) ->
     X == Y.
