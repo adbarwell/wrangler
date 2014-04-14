@@ -58,6 +58,10 @@ seqS() ->
     skel:do([{seq, fun ?MODULE:fib/1}, {seq, fun ?MODULE:succ/1}], input()),
     ok.
 
+pipeS() ->
+    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}], input()),
+    ok.
+
 -spec farmS() -> ok.
 farmS() ->
     skel:do([{farm, [{seq, fun ?MODULE:id/1}], 8}], input()),

@@ -124,6 +124,7 @@ multiplePipe(Tuples, File) ->
 skeletonKind(Tuple) ->
     Ps = [
 	  {seq, ?MATCH(?T("{seq, SeqRest@@@}"), Tuple)},
+	  {pipe, ?MATCH(?T("{pipe, PipeRest@@@}"), Tuple)},
 	  {farm, ?MATCH(?T("{farm, FarmRest@@@}"), Tuple)},
 	  {ord, ?MATCH(?T("{ord, OrdRest@@@}"), Tuple)},
 	  {reduce, ?MATCH(?T("{reduce, RedRest@@@}"), Tuple)},
@@ -195,9 +196,11 @@ areCompatible({c, number, _, _}, {c, number, _, _}) ->
 areCompatible(X, Y) ->
     X == Y.
 
-typeCheckSkeleton({seq, Tuple}, File) ->
+typeCheckSkeleton({_, Tuple}, File) ->
     ?print(?PP(Tuple)),
+    ?print(Tuple),
     {M, F, A} = traverseTuple(Tuple),
+    io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
     {ok, CM} = api_refac:module_name(File),
     case CM == M of
 	true ->
@@ -222,6 +225,8 @@ traverseTuple({tree, implicit_fun, A2, A3}) ->
     %% ?print(FunDef),
     FunDef;
     %% ?print(A3);
+traverseTuple({tree, list, A2, A3}) ->
+    traverseTuple(A3);
 traverseTuple({wrapper, A1, A2, A3}) ->
     ok;
     %% ?print(A1),
@@ -230,16 +235,26 @@ traverseTuple({wrapper, A1, A2, A3}) ->
 traverseTuple([Tuple]) ->
     %% ?print(Tuple),
     traverseTuple(Tuple);
-traverseTuple([{wrapper, A1, A2, A3} | Rest]) ->
+traverseTuple([{wrapper, atom, A2, A3} | Rest]) ->
+    %% ?print(A1),
+    %% ?print(A2),
+    ?print(A3),
+    ?print(Rest),
+    traverseTuple(Rest);
+traverseTuple([{tree, list, A2, A3} | Rest]) ->
     %% ?print(A1),
     %% ?print(A2),
     %% ?print(A3),
+    traverseTuple(A3),
     traverseTuple(Rest);
-traverseTuple([{tree, A1, A2, A3} | Rest]) ->
-    %% ?print(A1),
-    %% ?print(A2),
-    %% ?print(A3),
-    traverseTuple(Rest);
+traverseTuple([{tree, implicit_fun, A2, A3} | _]) ->
+    ?print(A2),
+    ?print(A3),
+    FunDef = getFunDef(A2#attr.ann),
+    ?print(FunDef),
+    FunDef;
+traverseTuple({list, Xs, _}) ->
+    traverseTuple(Xs);
 traverseTuple(X) ->
     ?print(X).
 
@@ -263,6 +278,7 @@ checkValidSkeletons([]) ->
     true;
 checkValidSkeletons([Tuple | Tuples]) ->
     Matching = ?MATCH(?T("{seq, SeqRest@@@}"), Tuple) or 
+	?MATCH(?T("{pipe, PipeRest@@@}"), Tuple) or
 	?MATCH(?T("{farm, FarmRest@@@}"), Tuple) or
 	?MATCH(?T("{ord, OrdRest@@@}"), Tuple) or
 	?MATCH(?T("{reduce, RedRest@@@}"), Tuple) or
