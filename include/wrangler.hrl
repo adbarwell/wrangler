@@ -19,6 +19,8 @@
                tabwidth =8        ::integer()
               }).
 
+-record(attr, {pos = {0,0}, ann = [], com = none}).
+
 -type args() :: #args{}.
 -type(filename()::string()).
 -type(modulename()::atom()).
