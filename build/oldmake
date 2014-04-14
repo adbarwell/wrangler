@@ -1,0 +1,32 @@
+.PHONY: all clean compile check console type_ntyper compile_ntyper copy_ntyper ntyper
+
+all: check compile
+
+clean:
+	@rm *.beam
+	@echo "\n-- Clean Complete\n"
+
+compile:
+	@erlc -o testfiles/*.erl
+	@echo "\n-- Compile complete\n"
+
+check: compile
+	@dialyzer -Wno_unused testfiles/*.erl
+	@echo "\n-- Dialyzer Check Complete\n"
+
+console: check
+	@exec erl -args_file ./priv/default.args
+
+type_ntyper:
+	@dialyzer wrangler-master/src/ntyper.erl
+	@echo "\n-- Ran Dialyzer on ntyper.erl Successfully\n" 
+
+compile_ntyper:
+	@erlc ../src/ntyper.erl
+	@echo "\n-- ntyper.erl Compiled\n"
+
+copy_ntyper:
+	@cp ntyper.beam /usr/local/Cellar/erlang/R16B02/lib/erlang/lib/wrangler-1.1/ebin
+	@echo "\n-- ntyper.beam Copied to Wrangler's ebin\n"
+
+ntyper: compile_ntyper copy_ntyper
