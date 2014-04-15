@@ -143,9 +143,9 @@ determineKind([{Kind, true} | _Rest], Tuple) ->
 determineKind([_ | Rest], Tuple) ->
     determineKind(Rest, Tuple).
 
-getInputType({seq, Tuple}, File) ->
+getInputType({_ , Tuple}, File) ->
     ?print(?PP(Tuple)),
-    {M, F, A} = traverseTuple(Tuple),
+    {M, F, A} = traverseTuple(Tuple, first),
     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
     {ok, CM} = api_refac:module_name(File),
     case CM == M of
@@ -165,9 +165,9 @@ getInputType({seq, Tuple}, File) ->
 	    io:format("False~n")
     end.
 
-getOutputType({seq, Tuple}, File) ->
+getOutputType({_, Tuple}, File) ->
     ?print(?PP(Tuple)),
-    {M, F, A} = traverseTuple(Tuple),
+    {M, F, A} = traverseTuple(Tuple, last),
     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
     {ok, CM} = api_refac:module_name(File),
     case CM == M of
@@ -223,7 +223,7 @@ typeCheckSkeleton({feedback, Tuple}, File) ->
 typeCheckSkeleton({_, Tuple}, File) ->
     ?print(?PP(Tuple)),
     ?print(Tuple),
-    {M, F, A} = traverseTuple(Tuple),
+    {M, F, A} = traverseTuple(Tuple, first),
     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
     {ok, CM} = api_refac:module_name(File),
     case CM == M of
@@ -249,33 +249,40 @@ traverseReduceTuple([{wrapper, atom, _, _} | Rest]) ->
 traverseReduceTuple(X) ->
     ?print(X).
 
-traverseTuple({tree, tuple, _A2, A3}) ->
+traverseTuple(Tuple, first) ->
+    io:format("first~n"),
+    findFirst(Tuple);
+traverseTuple(Tuple, last) ->
+    io:format("last~n"),
+    findLast(Tuple).
+
+findFirst({tree, tuple, _A2, A3}) ->
     io:format("tree, tuple~n"),
-    traverseTuple(A3);
-traverseTuple({tree, implicit_fun, A2, A3}) ->
+    findFirst(A3);
+findFirst({tree, implicit_fun, A2, A3}) ->
     io:format("tree, implicit_fun~n"),
     FunDef = getFunDef(A2#attr.ann),
     %% ?print(FunDef),
     FunDef;
-traverseTuple({tree, list, A2, A3}) ->
+findFirst({tree, list, A2, A3}) ->
     io:format("tree, list~n"),
-    traverseTuple(A3);
-traverseTuple({wrapper, A1, A2, A3}) ->
+    findFirst(A3);
+findFirst({wrapper, A1, A2, A3}) ->
     io:format("wrapper~n"),
     ?print(A3),
     none;
-traverseTuple([Tuple]) ->
+findFirst([Tuple]) ->
     io:format("[Tuple]~n"),
-    traverseTuple(Tuple);
-traverseTuple([{wrapper, atom, A2, A3} | Rest]) ->
+    findFirst(Tuple);
+findFirst([{wrapper, atom, A2, A3} | Rest]) ->
     io:format("[wrapper, atom | Rest]~n"),
     ?print(A3),
     ?print(Rest),
-    traverseTuple(Rest);
-traverseTuple([{tree, list, A2, A3} | Rest]) ->
+    findFirst(Rest);
+findFirst([{tree, list, A2, A3} | Rest]) ->
     io:format("[tree, list | Rest]~n"),
-    B1 = traverseTuple(A3),
-    B2 = traverseTuple(Rest),
+    B1 = findFirst(A3),
+    B2 = findFirst(Rest),
     ?print(B1),
     ?print(B2),
     case B1 == none of
@@ -284,17 +291,67 @@ traverseTuple([{tree, list, A2, A3} | Rest]) ->
 	false ->
 	    B1
     end;
-traverseTuple([{tree, implicit_fun, A2, A3} | _]) ->
+findFirst([{tree, implicit_fun, A2, A3} | _]) ->
     io:format("[tree, implicit_fun | _]~n"),
     ?print(A2),
     ?print(A3),
     FunDef = getFunDef(A2#attr.ann),
     ?print(FunDef),
     FunDef;
-traverseTuple({list, Xs, _}) ->
+findFirst({list, Xs, _}) ->
     io:format("{list, Xs, _}~n"),
-    traverseTuple(Xs);
-traverseTuple(X) ->
+    ?print(Xs),
+    findFirst(Xs);
+findFirst(X) ->
+    ?print(X).
+
+findLast({tree, tuple, _A2, A3}) ->
+    io:format("tree, tuple~n"),
+    findLast(A3);
+findLast({tree, implicit_fun, A2, A3}) ->
+    io:format("tree, implicit_fun~n"),
+    FunDef = getFunDef(A2#attr.ann),
+    %% ?print(FunDef),
+    FunDef;
+findLast({tree, list, A2, A3}) ->
+    io:format("tree, list~n"),
+    findLast(A3);
+findLast({wrapper, A1, A2, A3}) ->
+    io:format("wrapper~n"),
+    ?print(A3),
+    none;
+findLast([Tuple]) ->
+    io:format("[Tuple]~n"),
+    findLast(Tuple);
+findLast([{wrapper, atom, A2, A3} | Rest]) ->
+    io:format("[wrapper, atom | Rest]~n"),
+    ?print(A3),
+    ?print(Rest),
+    findLast(Rest);
+findLast([{tree, list, A2, A3} | Rest]) ->
+    io:format("[tree, list | Rest]~n"),
+    B1 = findLast(A3),
+    B2 = findLast(Rest),
+    ?print(B1),
+    ?print(B2),
+    case B1 == none of
+	true ->
+	    B2;
+	false ->
+	    B1
+    end;
+findLast([{tree, implicit_fun, A2, A3} | _]) ->
+    io:format("[tree, implicit_fun | _]~n"),
+    ?print(A2),
+    ?print(A3),
+    FunDef = getFunDef(A2#attr.ann),
+    ?print(FunDef),
+    FunDef;
+findLast({list, Xs, _}) ->
+    io:format("{list, Xs, _}~n"),
+    ?print(Xs),
+    findLast(Xs);
+findLast(X) ->
     ?print(X).
 
 getFunDef([{fun_def, {M, F, A, _, _}} | _]) ->

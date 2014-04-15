@@ -59,30 +59,32 @@ seqS() ->
     ok.
 
 pipeS() ->
-    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}], input()),
+    skel:do([{pipe, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:false/1}]}], input()),
     skel:do([{farm, [{pipe, {ord, [{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}]}}], 8}], input()),
+    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}, {pipe, [{seq, fun ?MODULE:id/1}]}], input()),
     ok.
 
 -spec farmS() -> ok.
 farmS() ->
     skel:do([{farm, [{seq, fun ?MODULE:id/1}], 8}], input()),
+    skel:do([{farm, [{seq, fun ?MODULE:id/1}], 8}, {farm, [{seq, fun ?MODULE:id/1}], 10}], input()),
     ok.
 
 -spec ordS() -> ok.
 ordS() ->
-    skel:do([{ord, [{farm, [{seq, fun ?MODULE:id/1}], 8}]}], input()),
+    skel:do([{ord, [{farm, [{seq, fun ?MODULE:id/1}], 8}]}, {ord, [{seq, fun ?MODULE:id/1}]}], input()),
     skel:do([{ord, [{seq, fun ?MODULE:id/1}]}], input()),
     ok.
 
 -spec mapS() -> ok.
 mapS() ->
     skel:do([{map, [{seq, fun ?MODULE:id/1}]}], lists:duplicate(10, input())),
-    skel:do([{map, [{seq, fun ?MODULE:id/1}], 8}], lists:duplicate(10, input())),
+    skel:do([{map, [{seq, fun ?MODULE:id/1}]}, {map, [{seq, fun ?MODULE:id/1}], 8}], lists:duplicate(10, input())),
     ok.
 
 -spec clusterS() -> ok.
 clusterS() ->
-    skel:do([{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}], lists:duplicate(10, input())),
+    skel:do([{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}, {cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}], lists:duplicate(10, input())),
     ok.
 
 -spec reduce() -> ok.
