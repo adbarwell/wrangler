@@ -60,6 +60,7 @@ seqS() ->
 
 pipeS() ->
     skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}], input()),
+    skel:do([{farm, [{pipe, {ord, [{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}]}}], 8}], input()),
     ok.
 
 -spec farmS() -> ok.
@@ -70,6 +71,7 @@ farmS() ->
 -spec ordS() -> ok.
 ordS() ->
     skel:do([{ord, [{farm, [{seq, fun ?MODULE:id/1}], 8}]}], input()),
+    skel:do([{ord, [{seq, fun ?MODULE:id/1}]}], input()),
     ok.
 
 -spec mapS() -> ok.
@@ -103,6 +105,7 @@ reduceS() ->
 -spec feedbackS() -> ok.
 feedbackS() ->
     skel:do([{feedback, [{farm, [{seq, fun ?MODULE:id/1}], 8}, {seq, fun other:id/1}], fun ?MODULE:const/1}], input()),
+    skel:do([{feedback, [{seq, fun ?MODULE:id/1}], fun ?MODULE:const/1}], input()),
     ok.
 
 %%------------------------------------------------------------------------------

@@ -196,6 +196,30 @@ areCompatible({c, number, _, _}, {c, number, _, _}) ->
 areCompatible(X, Y) ->
     X == Y.
 
+typeCheckSkeleton({reduce, Tuple}, File) ->
+    ?print(?PP(Tuple)),
+    reduce;
+    %% ?print(Tuple),
+    %% {M, F, A} = traverseReduceTuple(Tuple),
+    %% io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
+    %% {ok, CM} = api_refac:module_name(File),
+    %% case CM == M of
+    %% 	true ->
+    %% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
+    %% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
+    %% 		    ?print(Arg),
+    %% 		    ?print(Ret),
+    %% 		    ?print(Arg == Ret);
+    %% 		{error, Msg} ->
+    %% 		    ?print(Msg)
+    %% 	    end,
+    %% 	    io:format("True~n");
+    %% 	false ->
+    %% 	    io:format("False~n")
+    %% end;
+typeCheckSkeleton({feedback, Tuple}, File) ->
+    ?print(?PP(Tuple)),
+    feedback;
 typeCheckSkeleton({_, Tuple}, File) ->
     ?print(?PP(Tuple)),
     ?print(Tuple),
@@ -217,43 +241,58 @@ typeCheckSkeleton({_, Tuple}, File) ->
 	    io:format("False~n")
     end.
 
+traverseReduceTuple({tree, tuple, _, A3}) ->
+    ?print(A3),
+    traverseReduceTuple(A3);
+traverseReduceTuple([{wrapper, atom, _, _} | Rest]) ->
+    traverseReduceTuple(Rest);
+traverseReduceTuple(X) ->
+    ?print(X).
+
 traverseTuple({tree, tuple, _A2, A3}) ->
-    %% ?print(A3),
+    io:format("tree, tuple~n"),
     traverseTuple(A3);
 traverseTuple({tree, implicit_fun, A2, A3}) ->
+    io:format("tree, implicit_fun~n"),
     FunDef = getFunDef(A2#attr.ann),
     %% ?print(FunDef),
     FunDef;
-    %% ?print(A3);
 traverseTuple({tree, list, A2, A3}) ->
+    io:format("tree, list~n"),
     traverseTuple(A3);
 traverseTuple({wrapper, A1, A2, A3}) ->
-    ok;
-    %% ?print(A1),
-    %% ?print(A2),
-    %% ?print(A3);
+    io:format("wrapper~n"),
+    ?print(A3),
+    none;
 traverseTuple([Tuple]) ->
-    %% ?print(Tuple),
+    io:format("[Tuple]~n"),
     traverseTuple(Tuple);
 traverseTuple([{wrapper, atom, A2, A3} | Rest]) ->
-    %% ?print(A1),
-    %% ?print(A2),
+    io:format("[wrapper, atom | Rest]~n"),
     ?print(A3),
     ?print(Rest),
     traverseTuple(Rest);
 traverseTuple([{tree, list, A2, A3} | Rest]) ->
-    %% ?print(A1),
-    %% ?print(A2),
-    %% ?print(A3),
-    traverseTuple(A3),
-    traverseTuple(Rest);
+    io:format("[tree, list | Rest]~n"),
+    B1 = traverseTuple(A3),
+    B2 = traverseTuple(Rest),
+    ?print(B1),
+    ?print(B2),
+    case B1 == none of
+	true ->
+	    B2;
+	false ->
+	    B1
+    end;
 traverseTuple([{tree, implicit_fun, A2, A3} | _]) ->
+    io:format("[tree, implicit_fun | _]~n"),
     ?print(A2),
     ?print(A3),
     FunDef = getFunDef(A2#attr.ann),
     ?print(FunDef),
     FunDef;
 traverseTuple({list, Xs, _}) ->
+    io:format("{list, Xs, _}~n"),
     traverseTuple(Xs);
 traverseTuple(X) ->
     ?print(X).
