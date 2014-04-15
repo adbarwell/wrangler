@@ -56,6 +56,7 @@ seqS() ->
     skel:do([{seq, fun (X) -> X end}, {seq, fun ?MODULE:id/1},
              {seq, fun other:id/1}], input()),
     skel:do([{seq, fun ?MODULE:fib/1}, {seq, fun ?MODULE:succ/1}], input()),
+    skel:do([{seq, fun ?MODULE:false/1}], input()),
     ok.
 
 pipeS() ->

@@ -107,8 +107,59 @@ playing(Tuples, File) ->
     end.
 
 singlePipe([Tuple], File) ->
-    typeCheckSkeleton(skeletonKind(Tuple), File).
+    Kind = skeletonKind(Tuple),
+    ?print(Kind),
+    Type = typeCheckSkeleton(File, Tuple, Kind, both),
+    ?print(Type).
+    %% typeCheckSkeleton(skeletonKind(Tuple), File).
 
+typeCheckSkeleton(File, Tuple, Kind, both) ->
+    {typeCheckSkeleton(File, Tuple, Kind, first), typeCheckSkeleton(File, Tuple, Kind, last)};
+typeCheckSkeleton(File, Tuple, seq, first) ->
+    SeqFun = unwrapSeq(Tuple),
+    getFunType(File, SeqFun, arg);
+typeCheckSkeleton(File, Tuple, seq, last) ->
+    SeqFun = unwrapSeq(Tuple),
+    getFunType(File, SeqFun, ret).
+
+unwrapSeq({tree, tuple, _, X}) ->
+    unwrapSeq(X);
+unwrapSeq([_, {tree, implicit_fun, Args, _}]) ->
+    getFunDef(Args#attr.ann).
+
+getFunType(File, {M, F, A}, arg) ->
+    {ok, CM} = api_refac:module_name(File),
+    case CM == M of
+	true ->
+	    case getFileTypes(F, A, ntyper:rshow(File)) of
+		{F, A, {{args, Args}, {ret, Ret}}} ->
+		    Args;
+		{error, Msg} ->
+		    io:format("error: Msg: ~p~n", [Msg]),
+		    error
+	    end;
+	false ->
+	    io:format("Not current Module~n"),
+	    ncm
+    end;
+getFunType(File, {M, F, A}, ret) ->
+    {ok, CM} = api_refac:module_name(File),
+    case CM == M of
+	true ->
+	    case getFileTypes(F, A, ntyper:rshow(File)) of
+		{F, A, {{args, _Args}, {ret, Ret}}} ->
+		    Ret;
+		{error, Msg} ->
+		    io:format("error Msg: ~p~n", [Msg]),
+		    error
+	    end;
+	false ->
+	    io:format("Not current Module~n"),
+	    ncm
+    end.
+
+
+	    
 multiplePipe(Tuples, File) ->
     First = hd(Tuples),
     Last = lists:last(Tuples),
@@ -132,16 +183,16 @@ skeletonKind(Tuple) ->
 	  {cluster, ?MATCH(?T("{cluster, ClustRest@@@}"), Tuple)},
 	  {feedback, ?MATCH(?T("{feedback, FBackRest@@@}"), Tuple)}
 	 ],
-   determineKind(Ps, Tuple).
+   determineKind(Ps).
 
-determineKind([{_, false}], _Tuple) ->
+determineKind([{_, false}]) ->
     io:format("We've a problem.~n");
-determineKind([{Kind, true}], Tuple) ->
-    {Kind, Tuple};
-determineKind([{Kind, true} | _Rest], Tuple) ->
-    {Kind, Tuple};
-determineKind([_ | Rest], Tuple) ->
-    determineKind(Rest, Tuple).
+determineKind([{Kind, true}]) ->
+    Kind;
+determineKind([{Kind, true} | _Rest]) ->
+    Kind;
+determineKind([_ | Rest]) ->
+    determineKind(Rest).
 
 getInputType({_ , Tuple}, File) ->
     ?print(?PP(Tuple)),
