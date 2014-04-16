@@ -103,13 +103,19 @@ playing(Tuples, File) ->
 	1 ->
 	    singlePipe(Tuples, File);
 	_ ->
-	    multiplePipe(Tuples, File)
+	    io:format("multiplePipe(Tuples, File)~n")
+	    %% multiplePipe(Tuples, File)
     end.
 
 singlePipe([Tuple], File) ->
     Kind = skeletonKind(Tuple),
     ?print(Kind),
-    Type = typeCheckSkeleton(File, Tuple, Kind, both),
+    case Kind of
+	seq ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	pipe ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, first)
+    end,
     ?print(Type).
     %% typeCheckSkeleton(skeletonKind(Tuple), File).
 
@@ -120,12 +126,27 @@ typeCheckSkeleton(File, Tuple, seq, first) ->
     getFunType(File, SeqFun, arg);
 typeCheckSkeleton(File, Tuple, seq, last) ->
     SeqFun = unwrapSeq(Tuple),
-    getFunType(File, SeqFun, ret).
+    getFunType(File, SeqFun, ret);
+typeCheckSkeleton(File, Tuple, pipe, first) ->
+    FirstElement = unwrapPipe(Tuple, first),
+    ?print(FirstElement).
 
 unwrapSeq({tree, tuple, _, X}) ->
     unwrapSeq(X);
 unwrapSeq([_, {tree, implicit_fun, Args, _}]) ->
     getFunDef(Args#attr.ann).
+
+unwrapPipe({tree, tuple, _, Xs}, first) ->
+    unwrapPipe(Xs, first);
+unwrapPipe([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], first) ->
+    unwrapPipe(Xs, first);
+unwrapPipe({list, List, _}, first) ->
+    ?print(length(List)),
+    ?print(List);
+unwrapPipe(X, first) ->
+    ?print(X);
+unwrapPipe(X, last) ->
+    ?print(X).
 
 getFunType(File, {M, F, A}, arg) ->
     {ok, CM} = api_refac:module_name(File),
@@ -160,17 +181,17 @@ getFunType(File, {M, F, A}, ret) ->
 
 
 	    
-multiplePipe(Tuples, File) ->
-    First = hd(Tuples),
-    Last = lists:last(Tuples),
-    ?print(?PP(First)),
-    ?print(?PP(Last)),
-    InType = getInputType(skeletonKind(First), File),
-    OutType = getOutputType(skeletonKind(Last), File),
-    Compatibility = areCompatible(InType, OutType),
-    ?print(InType),
-    ?print(OutType),
-    ?print(Compatibility).
+%% multiplePipe(Tuples, File) ->
+%%     First = hd(Tuples),
+%%     Last = lists:last(Tuples),
+%%     ?print(?PP(First)),
+%%     ?print(?PP(Last)),
+%%     InType = getInputType(skeletonKind(First), File),
+%%     OutType = getOutputType(skeletonKind(Last), File),
+%%     Compatibility = areCompatible(InType, OutType),
+%%     ?print(InType),
+%%     ?print(OutType),
+%%     ?print(Compatibility).
 
 skeletonKind(Tuple) ->
     Ps = [
@@ -194,216 +215,216 @@ determineKind([{Kind, true} | _Rest]) ->
 determineKind([_ | Rest]) ->
     determineKind(Rest).
 
-getInputType({_ , Tuple}, File) ->
-    ?print(?PP(Tuple)),
-    {M, F, A} = traverseTuple(Tuple, first),
-    io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
-    {ok, CM} = api_refac:module_name(File),
-    case CM == M of
-	true ->
-	    case getFileTypes(F, A, ntyper:rshow(File)) of
-		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
-		    ?print(Arg),
-		    ?print(Ret),
-		    Arg;
-		{error, Msg} ->
-		    io:format("error~n"),
-		    ?print(Msg);
-		X ->
-		    ?print(X)
-	    end;
-	false ->
-	    io:format("False~n")
-    end.
+%% getInputType({_ , Tuple}, File) ->
+%%     ?print(?PP(Tuple)),
+%%     {M, F, A} = traverseTuple(Tuple, first),
+%%     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
+%%     {ok, CM} = api_refac:module_name(File),
+%%     case CM == M of
+%% 	true ->
+%% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
+%% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
+%% 		    ?print(Arg),
+%% 		    ?print(Ret),
+%% 		    Arg;
+%% 		{error, Msg} ->
+%% 		    io:format("error~n"),
+%% 		    ?print(Msg);
+%% 		X ->
+%% 		    ?print(X)
+%% 	    end;
+%% 	false ->
+%% 	    io:format("False~n")
+%%     end.
 
-getOutputType({_, Tuple}, File) ->
-    ?print(?PP(Tuple)),
-    {M, F, A} = traverseTuple(Tuple, last),
-    io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
-    {ok, CM} = api_refac:module_name(File),
-    case CM == M of
-	true ->
-	    case getFileTypes(F, A, ntyper:rshow(File)) of
-		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
-		    ?print(Arg),
-		    ?print(Ret),
-		    Ret;
-		{error, Msg} ->
-		    io:format("error~n"),
-		    ?print(Msg);
-		X ->
-		    ?print(X)
-	    end;
-	false ->
-	    io:format("False~n")
-    end.
+%% getOutputType({_, Tuple}, File) ->
+%%     ?print(?PP(Tuple)),
+%%     {M, F, A} = traverseTuple(Tuple, last),
+%%     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
+%%     {ok, CM} = api_refac:module_name(File),
+%%     case CM == M of
+%% 	true ->
+%% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
+%% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
+%% 		    ?print(Arg),
+%% 		    ?print(Ret),
+%% 		    Ret;
+%% 		{error, Msg} ->
+%% 		    io:format("error~n"),
+%% 		    ?print(Msg);
+%% 		X ->
+%% 		    ?print(X)
+%% 	    end;
+%% 	false ->
+%% 	    io:format("False~n")
+%%     end.
 
-areCompatible(any, _) ->
-    true;
-areCompatible(_, any) ->
-    true;
-areCompatible({c, number, _, _}, {c, number, _, _}) ->
-    true;
-areCompatible(X, Y) ->
-    X == Y.
+%% areCompatible(any, _) ->
+%%     true;
+%% areCompatible(_, any) ->
+%%     true;
+%% areCompatible({c, number, _, _}, {c, number, _, _}) ->
+%%     true;
+%% areCompatible(X, Y) ->
+%%     X == Y.
 
-typeCheckSkeleton({reduce, Tuple}, File) ->
-    ?print(?PP(Tuple)),
-    reduce;
-    %% ?print(Tuple),
-    %% {M, F, A} = traverseReduceTuple(Tuple),
-    %% io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
-    %% {ok, CM} = api_refac:module_name(File),
-    %% case CM == M of
-    %% 	true ->
-    %% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
-    %% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
-    %% 		    ?print(Arg),
-    %% 		    ?print(Ret),
-    %% 		    ?print(Arg == Ret);
-    %% 		{error, Msg} ->
-    %% 		    ?print(Msg)
-    %% 	    end,
-    %% 	    io:format("True~n");
-    %% 	false ->
-    %% 	    io:format("False~n")
-    %% end;
-typeCheckSkeleton({feedback, Tuple}, File) ->
-    ?print(?PP(Tuple)),
-    feedback;
-typeCheckSkeleton({_, Tuple}, File) ->
-    ?print(?PP(Tuple)),
-    ?print(Tuple),
-    {M, F, A} = traverseTuple(Tuple, first),
-    io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
-    {ok, CM} = api_refac:module_name(File),
-    case CM == M of
-	true ->
-	    case getFileTypes(F, A, ntyper:rshow(File)) of
-		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
-		    ?print(Arg),
-		    ?print(Ret),
-		    ?print(Arg == Ret);
-		{error, Msg} ->
-		    ?print(Msg)
-	    end,
-	    io:format("True~n");
-	false ->
-	    io:format("False~n")
-    end.
+%% typeCheckSkeleton({reduce, Tuple}, File) ->
+%%     ?print(?PP(Tuple)),
+%%     reduce;
+%%     %% ?print(Tuple),
+%%     %% {M, F, A} = traverseReduceTuple(Tuple),
+%%     %% io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
+%%     %% {ok, CM} = api_refac:module_name(File),
+%%     %% case CM == M of
+%%     %% 	true ->
+%%     %% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
+%%     %% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
+%%     %% 		    ?print(Arg),
+%%     %% 		    ?print(Ret),
+%%     %% 		    ?print(Arg == Ret);
+%%     %% 		{error, Msg} ->
+%%     %% 		    ?print(Msg)
+%%     %% 	    end,
+%%     %% 	    io:format("True~n");
+%%     %% 	false ->
+%%     %% 	    io:format("False~n")
+%%     %% end;
+%% typeCheckSkeleton({feedback, Tuple}, File) ->
+%%     ?print(?PP(Tuple)),
+%%     feedback;
+%% typeCheckSkeleton({_, Tuple}, File) ->
+%%     ?print(?PP(Tuple)),
+%%     ?print(Tuple),
+%%     {M, F, A} = traverseTuple(Tuple, first),
+%%     io:format("M:F/A: ~p:~p/~p~n", [M, F, A]),
+%%     {ok, CM} = api_refac:module_name(File),
+%%     case CM == M of
+%% 	true ->
+%% 	    case getFileTypes(F, A, ntyper:rshow(File)) of
+%% 		{F, A, {{args, [Arg]}, {ret, Ret}}} ->
+%% 		    ?print(Arg),
+%% 		    ?print(Ret),
+%% 		    ?print(Arg == Ret);
+%% 		{error, Msg} ->
+%% 		    ?print(Msg)
+%% 	    end,
+%% 	    io:format("True~n");
+%% 	false ->
+%% 	    io:format("False~n")
+%%     end.
 
-traverseReduceTuple({tree, tuple, _, A3}) ->
-    ?print(A3),
-    traverseReduceTuple(A3);
-traverseReduceTuple([{wrapper, atom, _, _} | Rest]) ->
-    traverseReduceTuple(Rest);
-traverseReduceTuple(X) ->
-    ?print(X).
+%% traverseReduceTuple({tree, tuple, _, A3}) ->
+%%     ?print(A3),
+%%     traverseReduceTuple(A3);
+%% traverseReduceTuple([{wrapper, atom, _, _} | Rest]) ->
+%%     traverseReduceTuple(Rest);
+%% traverseReduceTuple(X) ->
+%%     ?print(X).
 
-traverseTuple(Tuple, first) ->
-    io:format("first~n"),
-    findFirst(Tuple);
-traverseTuple(Tuple, last) ->
-    io:format("last~n"),
-    findLast(Tuple).
+%% traverseTuple(Tuple, first) ->
+%%     io:format("first~n"),
+%%     findFirst(Tuple);
+%% traverseTuple(Tuple, last) ->
+%%     io:format("last~n"),
+%%     findLast(Tuple).
 
-findFirst({tree, tuple, _A2, A3}) ->
-    io:format("tree, tuple~n"),
-    findFirst(A3);
-findFirst({tree, implicit_fun, A2, A3}) ->
-    io:format("tree, implicit_fun~n"),
-    FunDef = getFunDef(A2#attr.ann),
-    %% ?print(FunDef),
-    FunDef;
-findFirst({tree, list, A2, A3}) ->
-    io:format("tree, list~n"),
-    findFirst(A3);
-findFirst({wrapper, A1, A2, A3}) ->
-    io:format("wrapper~n"),
-    ?print(A3),
-    none;
-findFirst([Tuple]) ->
-    io:format("[Tuple]~n"),
-    findFirst(Tuple);
-findFirst([{wrapper, atom, A2, A3} | Rest]) ->
-    io:format("[wrapper, atom | Rest]~n"),
-    ?print(A3),
-    ?print(Rest),
-    findFirst(Rest);
-findFirst([{tree, list, A2, A3} | Rest]) ->
-    io:format("[tree, list | Rest]~n"),
-    B1 = findFirst(A3),
-    B2 = findFirst(Rest),
-    ?print(B1),
-    ?print(B2),
-    case B1 == none of
-	true ->
-	    B2;
-	false ->
-	    B1
-    end;
-findFirst([{tree, implicit_fun, A2, A3} | _]) ->
-    io:format("[tree, implicit_fun | _]~n"),
-    ?print(A2),
-    ?print(A3),
-    FunDef = getFunDef(A2#attr.ann),
-    ?print(FunDef),
-    FunDef;
-findFirst({list, Xs, _}) ->
-    io:format("{list, Xs, _}~n"),
-    ?print(Xs),
-    findFirst(Xs);
-findFirst(X) ->
-    ?print(X).
+%% findFirst({tree, tuple, _A2, A3}) ->
+%%     io:format("tree, tuple~n"),
+%%     findFirst(A3);
+%% findFirst({tree, implicit_fun, A2, A3}) ->
+%%     io:format("tree, implicit_fun~n"),
+%%     FunDef = getFunDef(A2#attr.ann),
+%%     %% ?print(FunDef),
+%%     FunDef;
+%% findFirst({tree, list, A2, A3}) ->
+%%     io:format("tree, list~n"),
+%%     findFirst(A3);
+%% findFirst({wrapper, A1, A2, A3}) ->
+%%     io:format("wrapper~n"),
+%%     ?print(A3),
+%%     none;
+%% findFirst([Tuple]) ->
+%%     io:format("[Tuple]~n"),
+%%     findFirst(Tuple);
+%% findFirst([{wrapper, atom, A2, A3} | Rest]) ->
+%%     io:format("[wrapper, atom | Rest]~n"),
+%%     ?print(A3),
+%%     ?print(Rest),
+%%     findFirst(Rest);
+%% findFirst([{tree, list, A2, A3} | Rest]) ->
+%%     io:format("[tree, list | Rest]~n"),
+%%     B1 = findFirst(A3),
+%%     B2 = findFirst(Rest),
+%%     ?print(B1),
+%%     ?print(B2),
+%%     case B1 == none of
+%% 	true ->
+%% 	    B2;
+%% 	false ->
+%% 	    B1
+%%     end;
+%% findFirst([{tree, implicit_fun, A2, A3} | _]) ->
+%%     io:format("[tree, implicit_fun | _]~n"),
+%%     ?print(A2),
+%%     ?print(A3),
+%%     FunDef = getFunDef(A2#attr.ann),
+%%     ?print(FunDef),
+%%     FunDef;
+%% findFirst({list, Xs, _}) ->
+%%     io:format("{list, Xs, _}~n"),
+%%     ?print(Xs),
+%%     findFirst(Xs);
+%% findFirst(X) ->
+%%     ?print(X).
 
-findLast({tree, tuple, _A2, A3}) ->
-    io:format("tree, tuple~n"),
-    findLast(A3);
-findLast({tree, implicit_fun, A2, A3}) ->
-    io:format("tree, implicit_fun~n"),
-    FunDef = getFunDef(A2#attr.ann),
-    %% ?print(FunDef),
-    FunDef;
-findLast({tree, list, A2, A3}) ->
-    io:format("tree, list~n"),
-    findLast(A3);
-findLast({wrapper, A1, A2, A3}) ->
-    io:format("wrapper~n"),
-    ?print(A3),
-    none;
-findLast([Tuple]) ->
-    io:format("[Tuple]~n"),
-    findLast(Tuple);
-findLast([{wrapper, atom, A2, A3} | Rest]) ->
-    io:format("[wrapper, atom | Rest]~n"),
-    ?print(A3),
-    ?print(Rest),
-    findLast(Rest);
-findLast([{tree, list, A2, A3} | Rest]) ->
-    io:format("[tree, list | Rest]~n"),
-    B1 = findLast(A3),
-    B2 = findLast(Rest),
-    ?print(B1),
-    ?print(B2),
-    case B1 == none of
-	true ->
-	    B2;
-	false ->
-	    B1
-    end;
-findLast([{tree, implicit_fun, A2, A3} | _]) ->
-    io:format("[tree, implicit_fun | _]~n"),
-    ?print(A2),
-    ?print(A3),
-    FunDef = getFunDef(A2#attr.ann),
-    ?print(FunDef),
-    FunDef;
-findLast({list, Xs, _}) ->
-    io:format("{list, Xs, _}~n"),
-    ?print(Xs),
-    findLast(Xs);
-findLast(X) ->
-    ?print(X).
+%% findLast({tree, tuple, _A2, A3}) ->
+%%     io:format("tree, tuple~n"),
+%%     findLast(A3);
+%% findLast({tree, implicit_fun, A2, A3}) ->
+%%     io:format("tree, implicit_fun~n"),
+%%     FunDef = getFunDef(A2#attr.ann),
+%%     %% ?print(FunDef),
+%%     FunDef;
+%% findLast({tree, list, A2, A3}) ->
+%%     io:format("tree, list~n"),
+%%     findLast(A3);
+%% findLast({wrapper, A1, A2, A3}) ->
+%%     io:format("wrapper~n"),
+%%     ?print(A3),
+%%     none;
+%% findLast([Tuple]) ->
+%%     io:format("[Tuple]~n"),
+%%     findLast(Tuple);
+%% findLast([{wrapper, atom, A2, A3} | Rest]) ->
+%%     io:format("[wrapper, atom | Rest]~n"),
+%%     ?print(A3),
+%%     ?print(Rest),
+%%     findLast(Rest);
+%% findLast([{tree, list, A2, A3} | Rest]) ->
+%%     io:format("[tree, list | Rest]~n"),
+%%     B1 = findLast(A3),
+%%     B2 = findLast(Rest),
+%%     ?print(B1),
+%%     ?print(B2),
+%%     case B1 == none of
+%% 	true ->
+%% 	    B2;
+%% 	false ->
+%% 	    B1
+%%     end;
+%% findLast([{tree, implicit_fun, A2, A3} | _]) ->
+%%     io:format("[tree, implicit_fun | _]~n"),
+%%     ?print(A2),
+%%     ?print(A3),
+%%     FunDef = getFunDef(A2#attr.ann),
+%%     ?print(FunDef),
+%%     FunDef;
+%% findLast({list, Xs, _}) ->
+%%     io:format("{list, Xs, _}~n"),
+%%     ?print(Xs),
+%%     findLast(Xs);
+%% findLast(X) ->
+%%     ?print(X).
 
 getFunDef([{fun_def, {M, F, A, _, _}} | _]) ->
     {M, F, A};

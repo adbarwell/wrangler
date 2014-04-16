@@ -60,6 +60,7 @@ seqS() ->
     ok.
 
 pipeS() ->
+    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}], input()),
     skel:do([{pipe, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:false/1}]}], input()),
     skel:do([{farm, [{pipe, {ord, [{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}]}}], 8}], input()),
     skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}, {pipe, [{seq, fun ?MODULE:id/1}]}], input()),
