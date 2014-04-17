@@ -128,25 +128,58 @@ typeCheckSkeleton(File, Tuple, seq, last) ->
     SeqFun = unwrapSeq(Tuple),
     getFunType(File, SeqFun, ret);
 typeCheckSkeleton(File, Tuple, pipe, first) ->
-    FirstElement = unwrapPipe(Tuple, first),
-    ?print(FirstElement).
+    FirstElementFun = unwrapPipe(Tuple, first),
+    LastElementFun = unwrapPipe(Tuple, last),
+    InputType = getFunType(File, FirstElementFun, arg),
+    OutputType = getFunType(File, LastElementFun, ret),
+    {InputType, OutputType}.
 
 unwrapSeq({tree, tuple, _, X}) ->
     unwrapSeq(X);
 unwrapSeq([_, {tree, implicit_fun, Args, _}]) ->
-    getFunDef(Args#attr.ann).
+    getFunDef(Args#attr.ann);
+unwrapSeq(X) ->
+    ?print(X).
 
-unwrapPipe({tree, tuple, _, Xs}, first) ->
-    unwrapPipe(Xs, first);
+unwrapPipe({tree, tuple, _, Xs}, Y) ->
+    unwrapPipe(Xs, Y);
 unwrapPipe([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], first) ->
-    unwrapPipe(Xs, first);
-unwrapPipe({list, List, _}, first) ->
-    ?print(length(List)),
-    ?print(List);
+    ?print(tuple_size(Xs)),
+    FirstElement = element(2, Xs),
+    ?print(?PP(FirstElement)),
+    unwrapUnknownElement(FirstElement, first);
 unwrapPipe(X, first) ->
     ?print(X);
+unwrapPipe([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], last) ->
+    unwrapPipe(Xs, last);
+unwrapPipe({list, A1, none}, last) ->
+    io:format("{list, A1, none}~n"),
+    unwrapUnknownElement(A1, last);
+unwrapPipe({list, _, A2}, last) ->
+    io:format("{list, _, A2}~n"),
+    unwrapPipe(A2, last);
+unwrapPipe({tree, list, _, Xs}, last) ->
+    unwrapPipe(Xs, last);
 unwrapPipe(X, last) ->
     ?print(X).
+
+unwrapUnknownElement([Element], X) ->
+    Kind = skeletonKind(Element),
+    case Kind of
+	seq ->
+	    unwrapSeq(Element);
+	_else ->
+	    ?print(Kind)
+    end;
+unwrapUnknownElement(Element, X) ->
+    ?print(Element),
+    Kind = skeletonKind(Element),
+    case Kind of 
+	seq ->
+	    unwrapSeq(Element);
+	_else ->
+	    ?print(Kind)
+    end.
 
 getFunType(File, {M, F, A}, arg) ->
     {ok, CM} = api_refac:module_name(File),
