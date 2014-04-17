@@ -63,7 +63,14 @@ pipeS() ->
     skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}], input()),
     skel:do([{pipe, [{seq, fun ?MODULE:false/1}, {seq, fun ?MODULE:id/1}]}], input()),
     skel:do([{farm, [{pipe, {ord, [{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}]}}], 8}], input()),
-    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}, {pipe, [{seq, fun ?MODULE:id/1}]}], input()),
+    skel:do([{pipe, [{seq, fun ?MODULE:id/1}]}, {pipe, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:false/1}]}], input()),
+    skel:do([{pipe, [{pipe, [{seq, fun ?MODULE:false/1}]}]}], input()),
+    skel:do([{pipe, [{farm, [{seq, fun ?MODULE:false/1}], 8}]}], input()),
+    skel:do([{pipe, [{ord, [{farm, [{seq, fun ?MODULE:false/1}], 8}]}]}], input()),
+    skel:do([{pipe, [{map, [{seq, fun ?MODULE:false/1}]}]}], input()),
+    skel:do([{pipe, [{cluster, [{seq, fun ?MODULE:false/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}]}], input()),
+    skel:do([{pipe, [{reduce, fun ?MODULE:plus/2, fun ?MODULE:id/1}]}], input()),
+    skel:do([{pipe, [{feedback, [{seq, fun ?MODULE:id/1}], fun ?MODULE:false/1}]}], input()),
     ok.
 
 -spec farmS() -> ok.
