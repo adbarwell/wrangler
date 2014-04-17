@@ -116,7 +116,9 @@ singlePipe([Tuple], File) ->
 	pipe ->
 	    InputType = typeCheckSkeleton(File, Tuple, Kind, first),
 	    OutputType = typeCheckSkeleton(File, Tuple, Kind, last),
-	    Type = {InputType, OutputType}
+	    Type = {InputType, OutputType};
+	farm ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both)
     end,
     ?print(Type).
     %% typeCheckSkeleton(skeletonKind(Tuple), File).
@@ -134,7 +136,14 @@ typeCheckSkeleton(File, Tuple, pipe, first) ->
     getFunType(File, FirstElementFun, arg);
 typeCheckSkeleton(File, Tuple, pipe, last) ->
     LastElementFun = unwrapPipe(Tuple, last),
+    getFunType(File, LastElementFun, ret);
+typeCheckSkeleton(File, Tuple, farm, first) ->
+    FirstElementFun = unwrapFarm(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, farm, last) ->
+    LastElementFun = unwrapFarm(Tuple, last),
     getFunType(File, LastElementFun, ret).
+
 
 unwrapSeq({tree, tuple, _, X}) ->
     unwrapSeq(X);
@@ -163,6 +172,26 @@ unwrapPipe({list, _, A2}, last) ->
 unwrapPipe({tree, list, _, Xs}, last) ->
     unwrapPipe(Xs, last);
 unwrapPipe(X, last) ->
+    ?print(X).
+
+unwrapFarm({tree, tuple, _, Xs}, Y) ->
+    unwrapFarm(Xs, Y);
+unwrapFarm([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], first) ->
+    FirstElement = element(2, Xs),
+    unwrapUnknownElement(FirstElement, first);
+unwrapFarm(X, first) ->
+    ?print(X);
+unwrapFarm([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], last) ->
+    unwrapFarm(Xs, last);
+unwrapFarm({list, A1, none}, last) ->
+    io:format("{list, A1, none}~n"),
+    unwrapUnknownElement(A1, last);
+unwrapFarm({list, _, A2}, last) ->
+    io:format("{list, _, A2}~n"),
+    unwrapFarm(A2, last);
+unwrapFarm({tree, list, _, Xs}, last) ->
+    unwrapFarm(Xs, last);
+unwrapFarm(X, last) ->
     ?print(X).
 
 unwrapUnknownElement([Element], X) ->
