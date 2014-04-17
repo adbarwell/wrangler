@@ -120,6 +120,14 @@ singlePipe([Tuple], File) ->
 	farm ->
 	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
 	ord ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	map ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	cluster ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	reduce ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	feedback ->
 	    Type = typeCheckSkeleton(File, Tuple, Kind, both)
     end,
     ?print(Type).
@@ -150,6 +158,30 @@ typeCheckSkeleton(File, Tuple, ord, first) ->
     getFunType(File, FirstElementFun, arg);
 typeCheckSkeleton(File, Tuple, ord, last) ->
     LastElementFun = unwrapFarm(Tuple, last),
+    getFunType(File, LastElementFun, ret);
+typeCheckSkeleton(File, Tuple, map, first) ->
+    FirstElementFun = unwrapMap(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, map, last) ->
+    LastElementFun = unwrapMap(Tuple, last),
+    getFunType(File, LastElementFun, arg);
+typeCheckSkeleton(File, Tuple, cluster, first) ->
+    FirstElementFun = unwrapCluster(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, cluster, last) ->
+    LastElementFun = unwrapCluster(Tuple, first),
+    getFunType(File, LastElementFun, ret);
+typeCheckSkeleton(File, Tuple, reduce, first) ->
+    RedFun = unwrapReduce(Tuple, first),
+    getFunType(File, RedFun, arg);
+typeCheckSkeleton(File, Tuple, reduce, last) ->
+    RedFun = unwrapReduce(Tuple, last),
+    getFunType(File, RedFun, ret);
+typeCheckSkeleton(File, Tuple, feedback, first) ->
+    FirstElementFun = unwrapFeedback(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, feedback, last) ->
+    LastElementFun = unwrapFeedback(Tuple, last),
     getFunType(File, LastElementFun, ret).
 
 
@@ -204,6 +236,22 @@ unwrapFarm(X, last) ->
 
 unwrapOrd(Tuple, X) ->
     unwrapPipe(Tuple, X).
+
+unwrapMap(Tuple, X) ->
+    unwrapFarm(Tuple, X).
+
+unwrapCluster(Tuple, X) ->
+    unwrapFarm(Tuple, X).
+
+unwrapReduce({tree, tuple, _, Xs}, Y) ->
+    unwrapReduce(Xs, Y);
+unwrapReduce([{wrapper, atom, _, _}, {tree, implicit_fun, Args, _} | _], _) ->
+    getFunDef(Args#attr.ann);
+unwrapReduce(X, _) ->
+    ?print(X).
+
+unwrapFeedback(Tuple, X) ->
+    unwrapFarm(Tuple, X).
 
 unwrapUnknownElement([Element], X) ->
     Kind = skeletonKind(Element),

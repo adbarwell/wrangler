@@ -82,11 +82,13 @@ ordS() ->
 -spec mapS() -> ok.
 mapS() ->
     skel:do([{map, [{seq, fun ?MODULE:id/1}]}], lists:duplicate(10, input())),
+    skel:do([{map, [{seq, fun ?MODULE:false/1}, {seq, fun ?MODULE:id/1}]}], input()),
     skel:do([{map, [{seq, fun ?MODULE:id/1}]}, {map, [{seq, fun ?MODULE:id/1}], 8}], lists:duplicate(10, input())),
     ok.
 
 -spec clusterS() -> ok.
 clusterS() ->
+    skel:do([{cluster, [{seq, fun ?MODULE:false/1}, {seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}], input()),
     skel:do([{cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}, {cluster, [{seq, fun ?MODULE:id/1}], fun ?MODULE:id/1, fun ?MODULE:id/1}], lists:duplicate(10, input())),
     ok.
 
@@ -111,6 +113,7 @@ reduceS() ->
 feedbackS() ->
     skel:do([{feedback, [{farm, [{seq, fun ?MODULE:id/1}], 8}, {seq, fun other:id/1}], fun ?MODULE:const/1}], input()),
     skel:do([{feedback, [{seq, fun ?MODULE:id/1}], fun ?MODULE:const/1}], input()),
+    skel:do([{feedback, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:false/1}], fun ?MODULE:const/1}], input()),
     ok.
 
 %%------------------------------------------------------------------------------
