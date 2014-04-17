@@ -76,7 +76,7 @@ farmS() ->
 -spec ordS() -> ok.
 ordS() ->
     skel:do([{ord, [{farm, [{seq, fun ?MODULE:id/1}], 8}]}, {ord, [{seq, fun ?MODULE:id/1}]}], input()),
-    skel:do([{ord, [{seq, fun ?MODULE:id/1}]}], input()),
+    skel:do([{ord, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:false/1}]}], input()),
     ok.
 
 -spec mapS() -> ok.

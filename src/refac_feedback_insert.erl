@@ -118,6 +118,8 @@ singlePipe([Tuple], File) ->
 	    OutputType = typeCheckSkeleton(File, Tuple, Kind, last),
 	    Type = {InputType, OutputType};
 	farm ->
+	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
+	ord ->
 	    Type = typeCheckSkeleton(File, Tuple, Kind, both)
     end,
     ?print(Type).
@@ -141,6 +143,12 @@ typeCheckSkeleton(File, Tuple, farm, first) ->
     FirstElementFun = unwrapFarm(Tuple, first),
     getFunType(File, FirstElementFun, arg);
 typeCheckSkeleton(File, Tuple, farm, last) ->
+    LastElementFun = unwrapFarm(Tuple, last),
+    getFunType(File, LastElementFun, ret);
+typeCheckSkeleton(File, Tuple, ord, first) ->
+    FirstElementFun = unwrapOrd(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, ord, last) ->
     LastElementFun = unwrapFarm(Tuple, last),
     getFunType(File, LastElementFun, ret).
 
@@ -193,6 +201,9 @@ unwrapFarm({tree, list, _, Xs}, last) ->
     unwrapFarm(Xs, last);
 unwrapFarm(X, last) ->
     ?print(X).
+
+unwrapOrd(Tuple, X) ->
+    unwrapPipe(Tuple, X).
 
 unwrapUnknownElement([Element], X) ->
     Kind = skeletonKind(Element),
