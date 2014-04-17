@@ -107,156 +107,43 @@ playing(Tuples, File) ->
     end.
 
 singlePipe([Tuple], File) ->
-    {InputType, OutputType} = typeCheckSkeleton(File, Tuple, 
-						skeletonKind(Tuple), both),
+    {InputType, OutputType} = typeCheckSkeleton(File, Tuple, both),
     ?print(InputType),
     ?print(OutputType).
 
 multiplePipe(Tuples, File) ->
     First = hd(Tuples),
-    InputType = typeCheckSkeleton(File, First, skeletonKind(First), first),
+    InputType = typeCheckSkeleton(File, First, first),
     Last = lists:last(Tuples),
-    OutputType = typeCheckSkeleton(File, Last, skeletonKind(Last), last),
+    OutputType = typeCheckSkeleton(File, Last, last),
     ?print(InputType),
     ?print(OutputType).
 
-typeCheckSkeleton(File, Tuple, Kind, both) ->
-    {typeCheckSkeleton(File, Tuple, Kind, first), typeCheckSkeleton(File, Tuple, Kind, last)};
-typeCheckSkeleton(File, Tuple, seq, first) ->
-    SeqFun = unwrapSeq(Tuple),
-    getFunType(File, SeqFun, arg);
-typeCheckSkeleton(File, Tuple, seq, last) ->
-    SeqFun = unwrapSeq(Tuple),
-    getFunType(File, SeqFun, ret);
-typeCheckSkeleton(File, Tuple, pipe, first) ->
-    FirstElementFun = unwrapPipe(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, pipe, last) ->
-    LastElementFun = unwrapPipe(Tuple, last),
-    getFunType(File, LastElementFun, ret);
-typeCheckSkeleton(File, Tuple, farm, first) ->
-    FirstElementFun = unwrapFarm(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, farm, last) ->
-    LastElementFun = unwrapFarm(Tuple, last),
-    getFunType(File, LastElementFun, ret);
-typeCheckSkeleton(File, Tuple, ord, first) ->
-    FirstElementFun = unwrapOrd(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, ord, last) ->
-    LastElementFun = unwrapFarm(Tuple, last),
-    getFunType(File, LastElementFun, ret);
-typeCheckSkeleton(File, Tuple, map, first) ->
-    FirstElementFun = unwrapMap(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, map, last) ->
-    LastElementFun = unwrapMap(Tuple, last),
-    getFunType(File, LastElementFun, arg);
-typeCheckSkeleton(File, Tuple, cluster, first) ->
-    FirstElementFun = unwrapCluster(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, cluster, last) ->
-    LastElementFun = unwrapCluster(Tuple, first),
-    getFunType(File, LastElementFun, ret);
-typeCheckSkeleton(File, Tuple, reduce, first) ->
-    RedFun = unwrapReduce(Tuple, first),
-    getFunType(File, RedFun, arg);
-typeCheckSkeleton(File, Tuple, reduce, last) ->
-    RedFun = unwrapReduce(Tuple, last),
-    getFunType(File, RedFun, ret);
-typeCheckSkeleton(File, Tuple, feedback, first) ->
-    FirstElementFun = unwrapFeedback(Tuple, first),
-    getFunType(File, FirstElementFun, arg);
-typeCheckSkeleton(File, Tuple, feedback, last) ->
-    LastElementFun = unwrapFeedback(Tuple, last),
-    getFunType(File, LastElementFun, ret).
+typeCheckSkeleton(File, Tuple, both) ->
+    {typeCheckSkeleton(File, Tuple, first), 
+     typeCheckSkeleton(File, Tuple, last)};
+typeCheckSkeleton(File, Tuple, first) ->
+    getFunType(File, unwrapTuple(Tuple, first), arg);
+typeCheckSkeleton(File, Tuple, last) ->
+    getFunType(File, unwrapTuple(Tuple, last), ret).
 
-
-unwrapSeq({tree, tuple, _, X}) ->
-    unwrapSeq(X);
-unwrapSeq([_, {tree, implicit_fun, Args, _}]) ->
+unwrapTuple({tree, tuple, _, X}, FirstOrLast) ->
+    unwrapTuple(X, FirstOrLast);
+unwrapTuple([_, {tree, implicit_fun, Args, _} | _], _) ->
     getFunDef(Args#attr.ann);
-unwrapSeq(X) ->
-    ?print(X).
-
-unwrapPipe({tree, tuple, _, Xs}, Y) ->
-    unwrapPipe(Xs, Y);
-unwrapPipe([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], first) ->
-    ?print(tuple_size(Xs)),
-    FirstElement = element(2, Xs),
-    ?print(?PP(FirstElement)),
-    unwrapUnknownElement(FirstElement, first);
-unwrapPipe([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], last) ->
-    unwrapPipe(Xs, last);
-unwrapPipe({list, A1, none}, last) ->
-    io:format("{list, A1, none}~n"),
-    unwrapUnknownElement(A1, last);
-unwrapPipe({list, _, A2}, last) ->
-    io:format("{list, _, A2}~n"),
-    unwrapPipe(A2, last);
-unwrapPipe({tree, list, _, Xs}, last) ->
-    unwrapPipe(Xs, last);
-unwrapPipe(X, _) ->
-    ?print(X).
-
-unwrapFarm({tree, tuple, _, Xs}, Y) ->
-    unwrapFarm(Xs, Y);
-unwrapFarm([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], first) ->
-    FirstElement = element(2, Xs),
-    unwrapUnknownElement(FirstElement, first);
-unwrapFarm(X, first) ->
-    ?print(X);
-unwrapFarm([{wrapper, atom, _, _}, {tree, list, _, Xs} | _], last) ->
-    unwrapFarm(Xs, last);
-unwrapFarm({list, A1, none}, last) ->
-    io:format("{list, A1, none}~n"),
-    unwrapUnknownElement(A1, last);
-unwrapFarm({list, _, A2}, last) ->
-    io:format("{list, _, A2}~n"),
-    unwrapFarm(A2, last);
-unwrapFarm({tree, list, _, Xs}, last) ->
-    unwrapFarm(Xs, last);
-unwrapFarm(X, last) ->
-    ?print(X).
-
-unwrapOrd(Tuple, X) ->
-    unwrapPipe(Tuple, X).
-
-unwrapMap(Tuple, X) ->
-    unwrapFarm(Tuple, X).
-
-unwrapCluster(Tuple, X) ->
-    unwrapFarm(Tuple, X).
-
-unwrapReduce({tree, tuple, _, Xs}, Y) ->
-    unwrapReduce(Xs, Y);
-unwrapReduce([{wrapper, atom, _, _}, {tree, implicit_fun, Args, _} | _], _) ->
-    getFunDef(Args#attr.ann);
-unwrapReduce(X, _) ->
-    ?print(X).
-
-unwrapFeedback(Tuple, X) ->
-    unwrapFarm(Tuple, X).
-
-unwrapUnknownElement([Element], X) ->
-    case skeletonKind(Element) of
-	seq ->
-	    unwrapSeq(Element);
-	pipe ->
-	    unwrapPipe(Element, X);
-	farm ->
-	    unwrapFarm(Element, X);
-	ord ->
-	    unwrapOrd(Element, X);
-	map ->
-	    unwrapMap(Element, X);
-	cluster ->
-	    unwrapCluster(Element, X);
-	reduce ->
-	    unwrapReduce(Element, X);
-	feedback ->
-	    unwrapFeedback(Element, X)
-    end.
+unwrapTuple([_, {tree, list, _, Xs} | _], first) ->
+    [T] = element(2, Xs), 
+    unwrapTuple(T, first);
+unwrapTuple([_, {tree, list, _, Xs} | _], last) ->
+    unwrapTuple(Xs, last);
+unwrapTuple({list, [A1], none}, last) ->
+    unwrapTuple(A1, last);
+unwrapTuple({list, _, A2}, last) ->
+    unwrapTuple(A2, last);
+unwrapTuple({tree, list, _, Xs}, last) ->
+    unwrapTuple(Xs, last);
+unwrapTuple(X, _) ->
+    {error, "unwrapTuple encountered unknown form"}.
 
 getFunType(File, {M, F, A}, arg) ->
     {ok, CM} = api_refac:module_name(File),
@@ -288,28 +175,6 @@ getFunType(File, {M, F, A}, ret) ->
 	    io:format("Not current Module~n"),
 	    ncm
     end.
-
-skeletonKind(Tuple) ->
-    Ps = [
-	  {seq, ?MATCH(?T("{seq, SeqRest@@@}"), Tuple)},
-	  {pipe, ?MATCH(?T("{pipe, PipeRest@@@}"), Tuple)},
-	  {farm, ?MATCH(?T("{farm, FarmRest@@@}"), Tuple)},
-	  {ord, ?MATCH(?T("{ord, OrdRest@@@}"), Tuple)},
-	  {reduce, ?MATCH(?T("{reduce, RedRest@@@}"), Tuple)},
-	  {map, ?MATCH(?T("{map, MapRest@@@}"), Tuple)},
-	  {cluster, ?MATCH(?T("{cluster, ClustRest@@@}"), Tuple)},
-	  {feedback, ?MATCH(?T("{feedback, FBackRest@@@}"), Tuple)}
-	 ],
-   determineKind(Ps).
-
-determineKind([{_, false}]) ->
-    io:format("We've a problem.~n");
-determineKind([{Kind, true}]) ->
-    Kind;
-determineKind([{Kind, true} | _Rest]) ->
-    Kind;
-determineKind([_ | Rest]) ->
-    determineKind(Rest).
 
 getFunDef([{fun_def, {M, F, A, _, _}} | _]) ->
     {M, F, A};
