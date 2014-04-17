@@ -114,7 +114,9 @@ singlePipe([Tuple], File) ->
 	seq ->
 	    Type = typeCheckSkeleton(File, Tuple, Kind, both);
 	pipe ->
-	    Type = typeCheckSkeleton(File, Tuple, Kind, first)
+	    InputType = typeCheckSkeleton(File, Tuple, Kind, first),
+	    OutputType = typeCheckSkeleton(File, Tuple, Kind, last),
+	    Type = {InputType, OutputType}
     end,
     ?print(Type).
     %% typeCheckSkeleton(skeletonKind(Tuple), File).
@@ -129,10 +131,10 @@ typeCheckSkeleton(File, Tuple, seq, last) ->
     getFunType(File, SeqFun, ret);
 typeCheckSkeleton(File, Tuple, pipe, first) ->
     FirstElementFun = unwrapPipe(Tuple, first),
+    getFunType(File, FirstElementFun, arg);
+typeCheckSkeleton(File, Tuple, pipe, last) ->
     LastElementFun = unwrapPipe(Tuple, last),
-    InputType = getFunType(File, FirstElementFun, arg),
-    OutputType = getFunType(File, LastElementFun, ret),
-    {InputType, OutputType}.
+    getFunType(File, LastElementFun, ret).
 
 unwrapSeq({tree, tuple, _, X}) ->
     unwrapSeq(X);
