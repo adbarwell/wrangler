@@ -165,7 +165,7 @@ test_rename_fun4() ->
     test_rename_fun(["c:/cygwin/home/hl/test_codebase/suites"]).
 
 test_rename_fun5() ->
-    test_rename_fun(["c:/cygwin/home/hl/test_codebase/wrangler"]).
+    test_rename_fun(["/Users/papillon/git/erlang/wrangler"]).
 
 test_rename_fun6() ->
     test_rename_fun(["c:/cygwin/home/hl/test_codebase/stdlib"]).

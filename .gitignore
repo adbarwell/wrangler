@@ -6,3 +6,5 @@ elisp/wrangler.el
 *.beam
 *~
 tags
+current_counterexample.eqc
+.#*

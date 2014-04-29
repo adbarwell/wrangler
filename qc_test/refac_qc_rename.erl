@@ -4,7 +4,7 @@
 
 -compile(export_all).
 
--include_lib("eqc.hrl").
+-include_lib("eqc/include/eqc.hrl").
 
 %% get the AAST represenation of the Erlang File.
 parse_file(FName) ->
@@ -244,7 +244,7 @@ prop_rename_var(FName) ->
 			      B1 == B2;
 			  false ->
 			      case parse_file(FName) of
-				  {error, _Reason} -> file:copy("temp.erl", FName), true
+				  {error, _Reason} -> file:copy("temp.erl", FName), true;
 				{ok, {AST1, _}} ->
 				      case refac_rename_var:cond_check(AST, DefinePos, NewName) of
 				      {false, _} -> B2 = var_binding_structure(AST1), B1 /= B2;
@@ -270,7 +270,7 @@ get_callback_funs(ModInfo) ->
       _ -> []
     end.
 
-pretty_print(FileName) -> 
+pretty_print1(FileName) -> 
     {ok, {AST, _}} = parse_file(FileName),
     wrangler_prettypr:print_ast(AST).
 
@@ -316,7 +316,7 @@ prop_rename_fun(Dir) ->
 			     Prop1 = ChangedFiles == ChangedFiles1,
 			     %% property2: rename twice should returns to the original file.
 			     %% pretty_print/1 pretty prints an Erlang file.
-			     Prop2 = pretty_print(FileName) == pretty_print("temp.erl"),
+			     Prop2 = pretty_print1(FileName) == pretty_print1("temp.erl"),
 			     %% property 3: B1 and B2 are isomorphic.
 			     %% rename/3 replaces {Mod, FunName, Arity} with
 			     %% {Mod, NewName, Arity} in B1

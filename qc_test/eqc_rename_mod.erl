@@ -174,7 +174,7 @@ test_rename_mod3() ->
 
 test_rename_mod4() ->
     test_rename_mod(["c:/cygwin/home/hl/test_codebase/suite"]).
-c
+
 test_rename_mod5() ->
     test_rename_mod(["c:/cygwin/home/hl/test_codebase/wrangler"]).
 
