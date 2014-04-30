@@ -1,3 +1,3 @@
--pa ./testfiles/ ./eqcmini/eqc-1.0.1/ebin ../qc_test/
+-pa ./testfiles/ ./eqcmini/eqc-1.0.1/ebin ../qc_test/ ../../skel/ebin
 -sname testing
 -setcookie testing
