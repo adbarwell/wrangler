@@ -10,7 +10,7 @@ fib(X) ->
     fib(X-1) + fib(X-2).
 
 test() ->
-    X = [1,2,3,4,5],
+    X = [1,2,3,4,5, 256],
     io:format("X: ~p~n", [X]),
     build_iolist(10).
 

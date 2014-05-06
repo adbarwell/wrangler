@@ -62,13 +62,15 @@ transform(_Args=#args{current_file_name=File, focus_sel=Expr}) ->
 std_list(File, Expr) ->
     ?RULE(?T("N@ = Lst@@"),
 	  begin
-	      ?TO_AST("N@ = list_to_binary(Lst@@)")
+	      ?TO_AST("N@ = [1,2,3]")
 	  end,
 	  begin
 	      case locationCheck(Expr, _This@) of
 		  true ->
-		      typing(File, Expr, Lst@@, N@),
-		      true;
+		      %% typing(File, Expr, Lst@@, N@),
+		      A = checkRange(Lst@@),
+		      ?print(A),
+		      A;
 		  _ ->
 		      false
 	      end
@@ -84,3 +86,43 @@ locationCheck(Expr, _This@) ->
 typing(File, Expr, Lst@@, N@) ->
     Ftypes = ntyper:rshow(File),
     ?print(Ftypes).
+
+checkRange(Lst) when is_list(Lst) ->
+    lists:foldl(fun(X, Acc) ->
+			(X >= 0) and (X =< 255)
+		end,
+		true,
+		extractList(Lst)).
+
+extractList([LstTuple]) ->
+    extractList_1(LstTuple, []);
+extractList(X) ->
+    ?print(X).
+
+extractList_1({tree, list, _, A4}, Acc) ->
+    extractList_1(A4, Acc);
+extractList_1({list, A2, none}, Acc) ->
+    case resolveLstElement(A2, Acc) of
+	{error, X} ->
+	    ?print(X);
+	Acc2 ->
+	    lists:reverse(Acc2)
+    end;
+extractList_1({list, A2, A3}, Acc) ->
+    case resolveLstElement(A2, Acc) of
+	{error, X} ->
+	    ?print(X);
+	Acc2 ->
+	    extractList_1(A3, Acc2)
+    end;
+extractList_1(X, Acc) ->
+    ?print(X),
+    ?print(Acc).
+
+resolveLstElement(A2, Acc) ->
+    case A2 of
+	[{wrapper, integer, _, {integer, _, A4}}] ->
+	    [list_to_integer(A4) | Acc];
+	_ ->
+	    {error, "A2 is not an integer"}
+    end.
