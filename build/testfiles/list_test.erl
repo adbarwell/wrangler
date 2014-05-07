@@ -30,6 +30,8 @@ fib(1) ->
 fib(X) ->
     fib(X-1) + fib(X-2).
 
+id(X) -> X.
+
 test() ->
     X = <<1, 2, 3, 4, 5, 255>>,
     io:format("X: ~p~n", [X]),
@@ -39,8 +41,11 @@ test() ->
 test2() ->
     X = lists:duplicate(10, <<1,2,3,4,5>>),
     skel:do([{map, [{seq, fun ?MODULE:fib/1}]}], X).
-    
 
+img_test() ->
+    Input = [[1,2,3,4,4,5,6,6,7,8,8,9,9,0,0,10]],
+    skel:do([{farm, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:id/1}], 8}, {seq, fun ?MODULE:id/1}], Input).
+   
 -spec build_iolist(non_neg_integer()) -> iolist().
 
 build_iolist(0) ->

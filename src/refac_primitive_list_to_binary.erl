@@ -54,12 +54,13 @@ selective() ->
 transform(_Args=#args{current_file_name=File, focus_sel=Expr}) ->
     %% Start1 = api_refac:start_end_loc(Expr),
     %% io:format("Start1: ~p~n", [Start1]),
-    ?FULL_TD_TP([std_list(File, Expr)], [File]).
+    ?FULL_TD_TP([std_list(File, Expr), skel(File, Expr)], [File]).
 
 %%------------------------------------------------------------------------------
 %% Rules 
 
 std_list(File, Expr) ->
+    ?print(std_list),
     ?RULE(?T("N@ = Lst@@"),
 	  begin
 	      ?TO_AST("N@ = " ++ convertList(Lst@@))
@@ -70,6 +71,22 @@ std_list(File, Expr) ->
 		      %% typing(File, Expr, Lst@@, N@),
 		      ?print(convertList(Lst@@)),
 		      checkRange(Lst@@);
+		  _ ->
+		      false
+	      end
+	  end).
+
+skel(_File, Expr) ->
+    ?print(skel),
+    ?RULE(?T("skel:do(Pipe@, In@)"),
+	  begin
+	      ?TO_AST("skel:do([{seq, fun ?MODULE:fib/1}], In@)")
+	  end,
+	  begin
+	      case locationCheck(Expr, _This@) of
+		  true ->
+		      ?print(adjustPipe(Pipe@)),
+		      true;
 		  _ ->
 		      false
 	      end
@@ -86,7 +103,7 @@ typing(File, Expr, Lst@@, N@) ->
     Ftypes = ntyper:rshow(File),
     ?print(Ftypes).
 
-checkRange(T) when is_list(T) ->
+checkRange(T) ->
     lists:foldl(fun(X, Acc) ->
 			(X >= 0) and (X =< 255)
 		end,
@@ -95,8 +112,8 @@ checkRange(T) when is_list(T) ->
 
 extractList([LstTuple]) ->
     extractList_1(LstTuple, []);
-extractList(X) ->
-    ?print(X).
+extractList(LstTuple) ->
+    extractList_1(LstTuple, []).
 
 extractList_1({tree, list, _, A4}, Acc) ->
     extractList_1(A4, Acc);
@@ -123,6 +140,7 @@ resolveLstElement(A2, Acc) ->
 	[{wrapper, integer, _, {integer, _, A4}}] ->
 	    [list_to_integer(A4) | Acc];
 	_ ->
+	    ?print(A2),
 	    {error, "A2 is not an integer"}
     end.
 
@@ -140,3 +158,38 @@ getListContentStr_1([H]) ->
     hd(io_lib:format("~w", [H]));
 getListContentStr_1([H | Rest]) ->
     hd(io_lib:format("~w", [H])) ++ "," ++  getListContentStr_1(Rest).
+
+adjustPipe(Pipe) ->
+    ?print(Pipe),
+    retrieveFunctions(Pipe, []).
+
+retrieveFunctions({tree, list, _, A4}, Funs) ->
+    ?print(1),
+    retrieveFunctions(A4, Funs);
+retrieveFunctions({list, A2, none}, Funs) ->
+    ?print(2),
+    retrieveFunctions(A2, Funs);
+retrieveFunctions({list, A2, A3}, Funs) ->
+    ?print(3),
+    retrieveFunctions(A3, retrieveFunctions(A2, Funs));
+retrieveFunctions([], Funs) ->
+    ?print(4),
+    Funs;
+retrieveFunctions([{tree, tuple, _, A4} | Rest], Funs) ->
+    ?print(5),
+    retrieveFunctions(Rest, retrieveFunctions(A4, Funs));
+retrieveFunctions([{wrapper, atom, _, _}, {tree, implicit_fun, Args, _} | _], Funs) ->
+    ?print(6),
+    [getFunDef(Args#attr.ann) | Funs];
+retrieveFunctions([{wrapper, atom, _, _}, A2 | _], Funs) ->
+    ?print(7),
+    retrieveFunctions(A2, Funs);
+retrieveFunctions(X, Funs) ->
+    ?print(Funs),
+    ?print(X),
+    [{error, "Unexpected Form"} | Funs]. 
+
+getFunDef([{fun_def, {M, F, A, _, _}} | _]) ->
+    {M, F, A};
+getFunDef([_ | Rest]) ->
+    getFunDef(Rest).
