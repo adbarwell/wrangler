@@ -2,6 +2,27 @@
 
 -compile([export_all]).
 
+
+%%------------------------------------------------------------------------------
+%% Debugging 
+
+-ifndef(debug).
+-define(debug, true).
+%% -define(debug, false).
+-endif.
+
+-ifndef(print).
+-define(print(Var), case ?debug of
+			true ->
+			    io:format("~p:~p~n  ~p: ~p~n", 
+				      [?MODULE, ?LINE, ??Var, Var]);
+			false ->
+			    ok
+		    end).
+-endif.
+
+%%------------------------------------------------------------------------------
+
 fib(0) ->
     0;
 fib(1) ->
@@ -10,9 +31,10 @@ fib(X) ->
     fib(X-1) + fib(X-2).
 
 test() ->
-    X = [1,2,3,4,5, 256],
+    X = <<1, 2, 3, 4, 5, 255>>,
     io:format("X: ~p~n", [X]),
-    build_iolist(10).
+    ?print(binary_to_list(X)).
+    %% build_iolist(10).
 
 test2() ->
     X = lists:duplicate(10, <<1,2,3,4,5>>),

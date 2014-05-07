@@ -62,15 +62,14 @@ transform(_Args=#args{current_file_name=File, focus_sel=Expr}) ->
 std_list(File, Expr) ->
     ?RULE(?T("N@ = Lst@@"),
 	  begin
-	      ?TO_AST("N@ = [1,2,3]")
+	      ?TO_AST("N@ = " ++ convertList(Lst@@))
 	  end,
 	  begin
 	      case locationCheck(Expr, _This@) of
 		  true ->
 		      %% typing(File, Expr, Lst@@, N@),
-		      A = checkRange(Lst@@),
-		      ?print(A),
-		      A;
+		      ?print(convertList(Lst@@)),
+		      checkRange(Lst@@);
 		  _ ->
 		      false
 	      end
@@ -87,12 +86,12 @@ typing(File, Expr, Lst@@, N@) ->
     Ftypes = ntyper:rshow(File),
     ?print(Ftypes).
 
-checkRange(Lst) when is_list(Lst) ->
+checkRange(T) when is_list(T) ->
     lists:foldl(fun(X, Acc) ->
 			(X >= 0) and (X =< 255)
 		end,
 		true,
-		extractList(Lst)).
+		extractList(T)).
 
 extractList([LstTuple]) ->
     extractList_1(LstTuple, []);
@@ -126,3 +125,18 @@ resolveLstElement(A2, Acc) ->
 	_ ->
 	    {error, "A2 is not an integer"}
     end.
+
+convertList(T) ->
+    Lst = extractList(T),
+    BinStr = getListContentStr(Lst),
+    ?print(Lst),
+    ?print(BinStr),
+    BinStr.
+
+getListContentStr(Lst) ->
+    "<<" ++ getListContentStr_1(Lst) ++ ">>".
+
+getListContentStr_1([H]) ->
+    hd(io_lib:format("~w", [H]));
+getListContentStr_1([H | Rest]) ->
+    hd(io_lib:format("~w", [H])) ++ "," ++  getListContentStr_1(Rest).
