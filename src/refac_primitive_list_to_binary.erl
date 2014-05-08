@@ -76,7 +76,7 @@ std_list(File, Expr) ->
 	      end
 	  end).
 
-skel(_File, Expr) ->
+skel(File, Expr) ->
     ?print(skel),
     ?RULE(?T("skel:do(Pipe@, In@)"),
 	  begin
@@ -85,7 +85,7 @@ skel(_File, Expr) ->
 	  begin
 	      case locationCheck(Expr, _This@) of
 		  true ->
-		      ?print(adjustPipe(Pipe@)),
+		      ?print(adjustPipe(File, Pipe@)),
 		      true;
 		  _ ->
 		      false
@@ -159,9 +159,9 @@ getListContentStr_1([H]) ->
 getListContentStr_1([H | Rest]) ->
     hd(io_lib:format("~w", [H])) ++ "," ++  getListContentStr_1(Rest).
 
-adjustPipe(Pipe) ->
+adjustPipe(File, Pipe) ->
     ?print(Pipe),
-    retrieveFunctions(Pipe, []).
+    adjustFuns(File, retrieveFunctions(Pipe, [])).
 
 retrieveFunctions({tree, list, _, A4}, Funs) ->
     ?print(1),
@@ -193,3 +193,17 @@ getFunDef([{fun_def, {M, F, A, _, _}} | _]) ->
     {M, F, A};
 getFunDef([_ | Rest]) ->
     getFunDef(Rest).
+
+adjustFuns(File, [Hd]) ->
+    adjustFun(File, Hd);
+adjustFuns(File, [Hd | Rest]) ->
+    adjustFun(File, Hd),
+    adjustFuns(File, Rest).
+
+adjustFun(File, MFA) ->
+    FunDef = api_refac:mfa_to_fun_def(File, MFA),
+    FunStr = ?PP(FunDef),
+    PropAST = ?TO_AST("Y = binary_to_list(X)"),
+    ?print(FunStr),
+    ?print(FunDef),
+    ?print(PropAST).

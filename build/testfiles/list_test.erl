@@ -44,7 +44,7 @@ test2() ->
 
 img_test() ->
     Input = [[1,2,3,4,4,5,6,6,7,8,8,9,9,0,0,10]],
-    skel:do([{farm, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:id/1}], 8}, {seq, fun ?MODULE:id/1}], Input).
+    skel:do([{map, [{seq, fun ?MODULE:id/1}, {seq, fun ?MODULE:fib/1}]}, {seq, fun ?MODULE:id/1}], Input).
    
 -spec build_iolist(non_neg_integer()) -> iolist().
 
