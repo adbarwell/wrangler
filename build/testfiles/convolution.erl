@@ -163,6 +163,15 @@ setElement(I, [E|Rest], New) ->
 convolution(Input, Msk) ->
     convolution1(Input, Msk, 0, 0).
 
+-spec convolution1([[bin_int()]], [bin_int()], 
+		   non_neg_integer(), non_neg_integer()) -> [[bin_int()]].
+convolution1(Input, Msk, X, Y) -> case (X < ?height) of
+                                    true -> Input2 = convolution(Input, Msk, X, Y),
+                                            convolution1(Input2, Msk, X+1, Y);
+                                    false -> Input
+                                  end.
+%% convolution1(Input, Msk, X, Y) -> Input.
+
 -spec convolution([[bin_int()]], [bin_int()], 
 		  non_neg_integer(), non_neg_integer()) -> [[bin_int()]].
 convolution(Input, Msk, X, Y)  -> 
@@ -189,15 +198,6 @@ convolution(Input, Msk, X, Y)  ->
             convolution(Output, Msk, X, Y+1);
      false -> Input
     end.
-
--spec convolution1([[bin_int()]], [bin_int()], 
-		   non_neg_integer(), non_neg_integer()) -> [[bin_int()]].
-convolution1(Input, Msk, X, Y) -> case (X < ?height) of
-                                    true -> Input2 = convolution(Input, Msk, X, Y),
-                                            convolution1(Input2, Msk, X+1, Y);
-                                    false -> Input
-                                  end.
-%% convolution1(Input, Msk, X, Y) -> Input.
 
 top(A, Step) ->
     setTopLeft(A, Step).
