@@ -147,6 +147,17 @@ setElement(1, [_|Rest], New) ->
 setElement(I, [E|Rest], New) -> 
     [E | setElement(I-1, Rest, New)].
 
+-spec setElementB(pos_integer(), binary(), bin_int()) -> binary().
+setElementB(_I, <<>>, _New) ->
+    <<>>;
+setElementB(1, <<_, Rest/binary>>, New) ->
+    <<New, Rest/binary>>;
+setElementB(I, <<E, Rest/binary>>, New) ->
+    IB = setElementB(I-1, Rest, New),
+    <<E, IB/binary>>.
+
+id(X) ->
+    X.
   
 %% setElement(1, [_|Rest], New) -> [New|Rest];
 %% setElement(I, [E|Rest], New) -> [E|setElement(I-1, Rest, New)].    
