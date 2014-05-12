@@ -26,6 +26,7 @@
 -type(modulename()::atom()).
 -type(functionname()::atom()).
 -type(functionarity()::integer()).
+-type(functionSig() :: {modulename(), functionname(), functionarity()}).
 -type(dir()::string()).
 -type(syntaxTree() :: {tree, any(), any(), any()}| {wrapper, any(), any(), any()}).
 -type(pos()::{integer(), integer()}).

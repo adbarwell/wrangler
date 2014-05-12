@@ -139,13 +139,13 @@ setListElement2(X, I, End, Val, List) ->
     NewList = setElement((I+1) * ?maskWidth + X, List, Val),
     setListElement2(X, I+1, End, Val, NewList).
 
--spec setElement(pos_integer(), [bin_int()], bin_int()) -> [bin_int()]. 
-setElement(_I, [], _New) -> 
-    [];
-setElement(1, [_|Rest], New) -> 
-    [New|Rest];
-setElement(I, [E|Rest], New) -> 
-    [E | setElement(I-1, Rest, New)].
+%% -spec setElement(pos_integer(), [bin_int()], bin_int()) -> [bin_int()]. 
+%% setElement(_I, [], _New) -> 
+%%     [];
+%% setElement(1, [_|Rest], New) -> 
+%%     [New|Rest];
+%% setElement(I, [E|Rest], New) -> 
+%%     [E | setElement(I-1, Rest, New)].
 
 -spec setElementB(pos_integer(), binary(), bin_int()) -> binary().
 setElementB(_I, <<>>, _New) ->
@@ -156,9 +156,13 @@ setElementB(I, <<E, Rest/binary>>, New) ->
     IB = setElementB(I-1, Rest, New),
     <<E, IB/binary>>.
 
-id(X) ->
-    X.
-  
+setElement(_I, [], _New) ->
+    [];
+setElement(1, [_ | Rest], New) ->
+    [New | Rest];
+setElement(I, Rest, New) ->
+    setElement(I-1, Rest, New).
+
 %% setElement(1, [_|Rest], New) -> [New|Rest];
 %% setElement(I, [E|Rest], New) -> [E|setElement(I-1, Rest, New)].    
    
