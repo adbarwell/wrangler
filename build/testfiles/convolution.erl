@@ -111,7 +111,7 @@ createInput(Filename) ->
 readImage(FileName) ->	
       {ok, _Img=#erl_image{format=F1, pixmaps=[PM]}} = erl_img:load(FileName),
       #erl_pixmap{pixels=Rows} =PM,
-      R = lists:map(fun({A,B}) -> binary_to_list(B) end, Rows),
+      R = lists:map(fun({A,B}) -> B end, Rows),
       {R, F1}.
 
 -spec setListElement1(non_neg_integer(), 
