@@ -124,7 +124,7 @@ second(_File, Expr, FunSig, Index) ->
     ?print(FunSig),
     ?RULE(?T("f@(Args@@) -> Clauses@@;"),
 	  begin
-	      ?TO_AST(refacClauseType(f@, Args@@, Clauses@@, Index))
+	      ?TO_AST(refacClauseType(Args@@, Clauses@@, Expr, Index))
 	  end,
 	  begin
 	      functionCheck(f@, length(Args@@), FunSig)
@@ -159,9 +159,36 @@ functionCheck(_, _, _) ->
 -spec refacClauseType(syntaxTree(), 
 		      syntaxTree(), syntaxTree(), integer()) -> string().
 
-refacClauseType(F, Args, Body, Index) ->
-    ?print(F),
+refacClauseType(Args, Body, Expr, Index) ->
     ?print(Args),
     ?print(Body),
     ?print(Index),
-    "fun(X) -> X end".
+    %% R1 = ?MATCH(?T("X@@, [], Z@@"), Args),
+    case ?MATCH(?T("X@@, [], Z@@"), Args) of
+	true ->
+	    baseCase(?PP(X@@), ?PP(Z@@));
+	    %% case X@@ of
+	    %% 	[] ->
+	    %% 	    "f@(<<>>, " ++ ?PP(Z@@) ++ ") -> <<>>";
+	    %% 	_else ->
+	    %% 	    "f@(" ++ ?PP(X@@) ++ ", <<>>, " ++ ?PP(Z@@) ++ ") -> <<>>;";
+	false ->
+	    "fun(X) -> X end"
+    end.
+
+baseCase([], []) ->
+    ?print(0),
+    "f@(<<>>) -> <<>>;";
+baseCase([], Z) ->
+    ?print(1),
+    ?print(Z),
+    "f@(<<>>, " ++ Z ++ ") -> <<>>;";
+baseCase(X, []) ->
+    ?print(2),
+    ?print(X),
+    "f@(" ++ X ++ ", <<>>) -> <<>>;";
+baseCase(X, Z) ->
+    ?print(3),
+    ?print(X),
+    ?print(Z),
+    "f@(" ++ X ++ ", <<>>, " ++ Z ++ ") -> <<>>;".

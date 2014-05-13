@@ -163,6 +163,14 @@ setElement(1, [_ | Rest], New) ->
 setElement(I, Rest, New) ->
     setElement(I-1, Rest, New).
 
+test([], Etc) ->
+    [];
+test(Etc, []) ->
+    [].
+
+test([]) ->
+    [].
+
 %% setElement(1, [_|Rest], New) -> [New|Rest];
 %% setElement(I, [E|Rest], New) -> [E|setElement(I-1, Rest, New)].    
    
