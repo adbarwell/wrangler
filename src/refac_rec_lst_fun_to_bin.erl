@@ -167,13 +167,19 @@ refacClauseType(Args, Body, Expr, Index) ->
     case ?MATCH(?T("X@@, [], Z@@"), Args) of
 	true ->
 	    baseCase(?PP(X@@), ?PP(Z@@));
-	    %% case X@@ of
-	    %% 	[] ->
-	    %% 	    "f@(<<>>, " ++ ?PP(Z@@) ++ ") -> <<>>";
-	    %% 	_else ->
-	    %% 	    "f@(" ++ ?PP(X@@) ++ ", <<>>, " ++ ?PP(Z@@) ++ ") -> <<>>;";
 	false ->
-	    "fun(X) -> X end"
+	    case ?MATCH(?T("A@@, [_ | R@@], C@@"), Args) of
+		true ->
+		    replaceCase(?PP(A@@), ?PP(R@@), ?PP(C@@), Body);
+		false ->
+		    case ?MATCH(?T("E@@, [H@ | R@], F@@"), Args) of 
+			true ->
+			    recCase(E@@, H@, R@, F@@, Args, Body, Expr);
+			false ->
+			    {error, 
+			     "Possibilities are endless, but this implementation isn't"}
+		    end
+	    end
     end.
 
 baseCase([], []) ->
@@ -192,3 +198,42 @@ baseCase(X, Z) ->
     ?print(X),
     ?print(Z),
     "f@(" ++ X ++ ", <<>>, " ++ Z ++ ") -> <<>>;".
+
+replaceCase([], R, [], _) ->
+    ?print(0),
+    ?print(R),
+    "f@(<<_, " ++ R ++ "/binary>>) -> " ++ R ++ ";";
+replaceCase(A, R, C, _) ->
+    ?print(1),
+    ?print(A),
+    ?print(R),
+    ?print(C),
+    "f@(" ++ A ++ ", <<_, " ++ R ++ "/binary>>, " ++ C ++ ") -> <<" ++ C ++ 
+	", " ++ R ++ "/binary>>;";
+replaceCase(_, _, _, _) ->
+    ?print(-1),
+    "fun(X) -> X end".
+
+recCase(E, H, R, F, Args, [Body], Expr) ->
+    ?print(E),
+    ?print(H),
+    ?print(R),
+    ?print(F),
+    ?print(Args),
+    ?print(Body),
+    NewArgs = ?PP(E) ++ ", <<" ++ ?PP(H) ++ ", " ++ ?PP(R) ++ "/binary>>, " ++ 
+	?PP(F),
+    ?print(NewArgs),
+    ?print(api_refac:bound_var_names(Expr)),
+    ?print(Body),
+    ?print(?PP(Body)),
+    case ?MATCH(?T("[H@ | F@(Args@@)]"), Body) of
+    	true ->
+	    NewBody = "IB = " ++ ?PP(F@) ++ "(" ++ ?PP(Args@@) ++ "), <<" ++ ?PP(H) ++ ", IB/binary>>",
+	    ?print(NewBody),
+	    NewFull = "f@(" ++ NewArgs ++ ") -> " ++ NewBody ++ ";",
+	    ?print(NewFull),
+	    NewFull;
+    	false ->
+    	    ?print(false)
+    end.
