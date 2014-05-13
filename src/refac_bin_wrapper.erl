@@ -35,17 +35,21 @@
 
 -spec input_par_prompts() -> [string()].
 input_par_prompts() ->
-    [].
+    ["Index of binary argument: "].
 
--spec select_focus(_Args::#args{}) -> {ok, syntaxTree()} | {ok, none} | none.
-%% select_focus(_Args=#args{current_file_name = File,
-%% 			 highlight_range = {Start, End}}) ->
-    %% api_interface:pos_to_expr1(File, Start, End).
+%% -spec select_focus(_Args::#args{}) -> {ok, syntaxTree()} | {ok, none} | none.
 select_focus(_Args=#args{current_file_name = File, cursor_pos = Pos}) ->
-    api_interface:pos_to_fun_def(File, Pos).
+    FunDef = api_interface:pos_to_fun_def(File, Pos),
+    FunNode = api_interface:pos_to_node(File, Pos, 
+					fun(Node) ->
+						is_the_enclosing_app(Node, Expr)
+					end),
+    {M, F, A} = api_refac:fun_define_info(FunDef)
+    {FunDef}
 
 -spec check_pre_cond(_Args::#args{}) -> ok.
 check_pre_cond(_) ->
+    ok.
 
 -spec selective() -> boolean().
 selective() ->
@@ -55,15 +59,6 @@ selective() ->
 transform(Args=#args{current_file_name = File,
 		     cursor_pos = Pos,
 		     focus_sel = Expr}) ->
-    %% setElement(Args).
-    %% ?print(Args),
-    %% R = api_interface:pos_to_fun_name(File, Pos),
-    %% ?print(R),
-    %% ?FULL_TD_TP([
-    %% 		 %% setElement(File, Expr)
-    %% 		 first(File, Expr)
-    %% 		 %% id(File, Expr)
-    %% 		], [File]).
     case api_interface:pos_to_fun_name(File, Pos) of 
 	{ok, {M, F, A, _, _}} ->
 	    ?FULL_TD_TP([

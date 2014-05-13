@@ -250,10 +250,26 @@ setBottomRight(Z, Step, Comp) ->
 	    (Z + Step - 1)
     end.
 
--spec filterWeight([[bin_int()]], non_neg_integer(), non_neg_integer(), 
-		   non_neg_integer(), non_neg_integer(), non_neg_integer(), 
-		   non_neg_integer(), non_neg_integer(), non_neg_integer(), 
-		   non_neg_integer(), [bin_int()]) -> non_neg_integer().
+%% -spec filterWeight([[bin_int()]], non_neg_integer(), non_neg_integer(), 
+%% 		   non_neg_integer(), non_neg_integer(), non_neg_integer(), 
+%% 		   non_neg_integer(), non_neg_integer(), non_neg_integer(), 
+%% 		   non_neg_integer(), [bin_int()]) -> non_neg_integer().
+%% filterWeight(Input, X, Y, I, J, 
+%% 	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom ->
+%%     MaskIndex = (J - (Y - Hstep)) * ?maskWidth + (I - (X - Vstep)),
+%%     Index = J * ?width + I,
+%%     %% io:fwrite(">~p ~p< ~n", [lists:nth(round(Index)+1, Input), lists:nth(round(MaskIndex)+1, Msk)]),
+%%     SumFX2 = SumFX + (lists:nth(round(Index)+1, Input) * lists:nth(round(MaskIndex)+1, Msk)),
+%%     filterWeight(Input,X,Y,I,J+1, Vstep, Hstep, SumFX2, Bottom, Right, Msk);
+%% filterWeight(_,_,_,_,_,_,_,SumFX,_,_,_) -> 
+%%     SumFX.
+
+filterWeight(Input, X, Y, I, J, 
+	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom,
+							   is_binary(Input),
+							   is_binary(Msk) ->
+    filterWeight(binary_to_list(Input), X, Y, I, J, Vstep, Hstep, SumFX, Bottom,
+		 Right, binary_to_list(Msk));
 filterWeight(Input, X, Y, I, J, 
 	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom ->
     MaskIndex = (J - (Y - Hstep)) * ?maskWidth + (I - (X - Vstep)),
@@ -263,7 +279,7 @@ filterWeight(Input, X, Y, I, J,
     filterWeight(Input,X,Y,I,J+1, Vstep, Hstep, SumFX2, Bottom, Right, Msk);
 filterWeight(_,_,_,_,_,_,_,SumFX,_,_,_) -> 
     SumFX.
-           
+          
 %% filterWeight1(Input, X,Y,I,J,Vstep,Hstep, SumFX, Bottom, Right,Msk) when I =< Right ->
 %%     SumFx2 = filterWeight(Input,X,Y,I,J, Vstep, Hstep, SumFX, Bottom, Right,Msk),
 %%     filterWeight1(Input,X,Y, I+1, J, Vstep, Hstep, SumFx2, Bottom, Right,Msk);
