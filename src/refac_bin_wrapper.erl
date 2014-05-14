@@ -113,34 +113,16 @@ first(File, ArgIndex, ClauseIndex, {{M, F, A}, FunDef, Arg}) ->
 	      {Args, Guards, Clause} = {lists:nth(ClauseIndex, Args@@@), 
 					lists:nth(ClauseIndex, Guards@@@), 
 					lists:nth(ClauseIndex, Clauses@@@)},
-	      %% ?TO_AST("f@(" ++ ?PP(Args) ++ ") when is_binary(" ++ ?PP(Arg) ++ 
-	      %% 		  ") -> " ++ ?PP(Clause) ++ "; " ++ 
-	      %% 		  original(Args@@@, Guards@@@, Clauses@@@, ""))
 	      
 	      ?TO_AST(lists:concat(["f@(", ?PP(Args), ") when is_binary(", 
 				    ?PP(Arg), "),", printGuards(Guards), " -> ", 
 				    F, "(", innerArgs(Args, Arg), ");",
-				    %% ?PP(Clause), "; ", 
 				    original(Args@@@, Guards@@@, 
 						 Clauses@@@, "")]))
 	  end,
 	  begin
 	      functionCheck(f@, length(hd(Args@@@)), {M, F, A})
 	  end).
-
-
-%% first(File, Expr, FunSig) -> 
-%%     ?print(first),
-%%     ?print(Expr),
-%%     ?print(FunSig),
-%%     ?RULE(?T(""),
-%% 	  begin
-%% 	      AstString = "",
-%% 	      ?TO_AST(AstString)
-%% 	  end,
-%% 	  begin
-%% 	      true
-%% 	  end).
 
 %%------------------------------------------------------------------------------
 %% Assisting Functions 
