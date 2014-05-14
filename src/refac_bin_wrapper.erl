@@ -15,8 +15,8 @@
 %% Debugging 
 
 -ifndef(debug).
--define(debug, true).
-%% -define(debug, false).
+%% -define(debug, true).
+-define(debug, false).
 -endif.
 
 -ifndef(print).
@@ -73,9 +73,11 @@ select_focus(_Args=#args{current_file_name = File,
 			    {error, "Halt here, please."}
 		    end;
 		{error, Msg} ->
+		    ?print(1),
 		    {error, Msg}
 	    end;
 	{error, Msg} ->
+	    ?print(0),
 	    {error, Msg}
     end.
 
@@ -96,33 +98,97 @@ selective() ->
     true.
 
 -spec transform(_Args::#args{}) -> {ok, syntaxTree()} | {error, string()}.
-transform(Args=#args{current_file_name = File,
-		     cursor_pos = Pos,
-		     focus_sel = Expr}) ->
-    case api_interface:pos_to_fun_name(File, Pos) of 
-	{ok, {M, F, A, _, _}} ->
-	    ?FULL_TD_TP([
-			 first(File, Expr, {M, F, A})
-			], [File]);
-	{error, Msg} ->
-	    {error, Msg}
-    end.
+transform(Args=#args{current_file_name = F,
+		     user_inputs = [I, C], focus_sel = S}) ->
+    ?FULL_TD_TP([first(F, list_to_integer(I), list_to_integer(C), S)], [F]).
+		     
 
 %%------------------------------------------------------------------------------
 %% Rules
 
-first(File, Expr, FunSig) -> 
+first(File, ArgIndex, ClauseIndex, {{M, F, A}, FunDef, Arg}) ->
     ?print(first),
-    ?print(Expr),
-    ?print(FunSig),
-    ?RULE(?T(""),
+    ?RULE(?T("f@(Args@@@) when Guards@@@ -> Clauses@@@"),
 	  begin
-	      AstString = "",
-	      ?TO_AST(AstString)
+	      {Args, Guards, Clause} = {lists:nth(ClauseIndex, Args@@@), 
+					lists:nth(ClauseIndex, Guards@@@), 
+					lists:nth(ClauseIndex, Clauses@@@)},
+	      %% ?TO_AST("f@(" ++ ?PP(Args) ++ ") when is_binary(" ++ ?PP(Arg) ++ 
+	      %% 		  ") -> " ++ ?PP(Clause) ++ "; " ++ 
+	      %% 		  original(Args@@@, Guards@@@, Clauses@@@, ""))
+	      
+	      ?TO_AST(lists:concat(["f@(", ?PP(Args), ") when is_binary(", 
+				    ?PP(Arg), "),", printGuards(Guards), " -> ", 
+				    F, "(", innerArgs(Args, Arg), ");",
+				    %% ?PP(Clause), "; ", 
+				    original(Args@@@, Guards@@@, 
+						 Clauses@@@, "")]))
 	  end,
 	  begin
-	      true
+	      functionCheck(f@, length(hd(Args@@@)), {M, F, A})
 	  end).
+
+
+%% first(File, Expr, FunSig) -> 
+%%     ?print(first),
+%%     ?print(Expr),
+%%     ?print(FunSig),
+%%     ?RULE(?T(""),
+%% 	  begin
+%% 	      AstString = "",
+%% 	      ?TO_AST(AstString)
+%% 	  end,
+%% 	  begin
+%% 	      true
+%% 	  end).
 
 %%------------------------------------------------------------------------------
 %% Assisting Functions 
+
+functionCheck({tree, atom, _, F}, A, {_, F, A}) ->
+    true;
+functionCheck(_, _, _) ->
+    false.
+
+original([], [], [], Acc) ->
+    ?print(Acc),
+    Acc;
+original([Args | ArgsRest], [Guards | GuardsRest], [Clauses | ClausesRest], Acc) ->
+    ?print(?PP(Args)),
+    ?print(Guards),
+    ?print(?PP(Clauses)),
+    case Guards of
+	[] ->
+	    original(ArgsRest,
+		     GuardsRest,
+		     ClausesRest,
+		     Acc ++ "f@(" ++ ?PP(Args) ++ ") -> " ++ 
+			 ?PP(Clauses) ++ "; ");
+	_ ->
+	    original(ArgsRest,
+		     GuardsRest,
+		     ClausesRest,
+		     Acc ++ "f@(" ++ ?PP(Args) ++ ") when " ++ 
+			 printGuards(Guards) ++ " -> " ++ ?PP(Clauses) ++ "; ")
+    end.
+
+printGuards([]) ->
+    "";
+printGuards(Guards) ->
+    printGuards(Guards, "").
+
+printGuards([], Acc) ->
+    tl(Acc);
+printGuards([Guard | Rest], Acc) ->
+    printGuards(Rest, Acc ++ ", " ++ ?PP(Guard)).
+
+innerArgs(Args, Arg) ->
+    innerArgs(Args, Arg, "").
+
+innerArgs([], _arg, Acc) ->
+    tl(Acc);
+innerArgs([Arg | Rest], Arg, Acc) ->
+    innerArgs(Rest, Arg, 
+	      lists:concat([Acc, ",binary_to_list(", ?PP(Arg), ")"]));
+innerArgs([A | Rest], Arg, Acc) ->
+    innerArgs(Rest, Arg, lists:concat([Acc, ",", ?PP(A)])).

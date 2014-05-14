@@ -14,7 +14,8 @@
 -module(convolution).
 -compile(export_all).
 
--include_lib("/Users/adam/git/erlang/erl_img/include/erl_img.hrl").
+%% -include_lib("/Users/adam/git/erlang/erl_img/include/erl_img.hrl").
+-include_lib("/Users/papillon/git/erlang/erl_img/include/erl_img.hrl").
 
 %%------------------------------------------------------------------------------
 %% Debugging 
@@ -264,12 +265,12 @@ setBottomRight(Z, Step, Comp) ->
 %% filterWeight(_,_,_,_,_,_,_,SumFX,_,_,_) -> 
 %%     SumFX.
 
-filterWeight(Input, X, Y, I, J, 
-	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom,
-							   is_binary(Input),
-							   is_binary(Msk) ->
-    filterWeight(binary_to_list(Input), X, Y, I, J, Vstep, Hstep, SumFX, Bottom,
-		 Right, binary_to_list(Msk));
+%% filterWeight(Input, X, Y, I, J, 
+%% 	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom,
+%% 							   is_binary(Input),
+%% 							   is_binary(Msk) ->
+%%     filterWeight(binary_to_list(Input), X, Y, I, J, Vstep, Hstep, SumFX, Bottom,
+%% 		 Right, binary_to_list(Msk));
 filterWeight(Input, X, Y, I, J, 
 	     Vstep, Hstep, SumFX, Bottom, Right, Msk) when J =< Bottom ->
     MaskIndex = (J - (Y - Hstep)) * ?maskWidth + (I - (X - Vstep)),
@@ -280,10 +281,9 @@ filterWeight(Input, X, Y, I, J,
 filterWeight(_,_,_,_,_,_,_,SumFX,_,_,_) -> 
     SumFX.
 
-test(A, B, C) ->
-    {A, B, C};
-test([], B, C) ->
-    {[], B, C}.
+test(A, B, C) when is_binary(A) -> test(binary_to_list(A), B, C);
+test(A, B, C) when is_list(A) -> {A, B, C};
+test([], B, C) -> {[], B, C}.
           
 %% filterWeight1(Input, X,Y,I,J,Vstep,Hstep, SumFX, Bottom, Right,Msk) when I =< Right ->
 %%     SumFx2 = filterWeight(Input,X,Y,I,J, Vstep, Hstep, SumFX, Bottom, Right,Msk),
