@@ -35,20 +35,59 @@
 
 -spec input_par_prompts() -> [string()].
 input_par_prompts() ->
-    ["Index of binary argument: "].
+    [
+     "Index of binary argument: ",
+     "Function clause: "
+    ].
 
 %% -spec select_focus(_Args::#args{}) -> {ok, syntaxTree()} | {ok, none} | none.
-select_focus(_Args=#args{current_file_name = File, cursor_pos = Pos}) ->
-    FunDef = api_interface:pos_to_fun_def(File, Pos),
-    FunNode = api_interface:pos_to_node(File, Pos, 
-					fun(Node) ->
-						is_the_enclosing_app(Node, Expr)
-					end),
-    {M, F, A} = api_refac:fun_define_info(FunDef)
-    {FunDef}
+select_focus(_Args=#args{current_file_name = File, 
+			 user_inputs = [Index, Clause], cursor_pos = Pos}) ->
+    ?print(File),
+    ?print(Index),
+    ?print(Clause),
+    ?print(Pos),
+    case api_interface:pos_to_fun_def(File, Pos) of
+	{ok, FunDef} ->
+	    ?print(FunDef),
+	    ?print(?PP(FunDef)),
+	    case api_interface:pos_to_fun_name(File, Pos) of
+		{ok, {M, F, A, _, _}} ->
+		    ?print(M),
+		    ?print(F),
+		    ?print(A),
+		    case ?MATCH(?T("f@(Args@@@) when G@@@ -> C@@@"), FunDef) of
+			true ->
+			    ?print(true),
+			    ?print(Args@@@),
+			    ?print(length(Args@@@)),
+			    Args = lists:nth(list_to_integer(Clause), Args@@@),
+			    ?print(?PP(Args)),
+			    Arg = lists:nth(list_to_integer(Index), Args),
+			    ?print(?PP(Arg)),
+			    {ok, {{M, F, A}, FunDef, Arg}};
+			    %% {error, "Halt here, please."};
+			false ->
+			    ?print(false),
+			    %% {ok, {{M, F, A}, FunDef}}
+			    {error, "Halt here, please."}
+		    end;
+		{error, Msg} ->
+		    {error, Msg}
+	    end;
+	{error, Msg} ->
+	    {error, Msg}
+    end.
 
--spec check_pre_cond(_Args::#args{}) -> ok.
-check_pre_cond(_) ->
+-spec check_pre_cond(Args::#args{}) -> ok.
+check_pre_cond(_Args=#args{current_file_name = File,
+			   user_inputs = [Index, Clause], focus_sel = Expr}) ->
+    ?print(check_pre_cond),
+    {{M, F, A}, _FunDef, Arg} = Expr,
+    ?print(M),
+    ?print(F),
+    ?print(A),
+    ?print(Arg),
     ok.
 
 -spec selective() -> boolean().
@@ -62,7 +101,7 @@ transform(Args=#args{current_file_name = File,
     case api_interface:pos_to_fun_name(File, Pos) of 
 	{ok, {M, F, A, _, _}} ->
 	    ?FULL_TD_TP([
-			 first(File, Expr, {M, F, A}),
+			 first(File, Expr, {M, F, A})
 			], [File]);
 	{error, Msg} ->
 	    {error, Msg}
@@ -77,7 +116,7 @@ first(File, Expr, FunSig) ->
     ?print(FunSig),
     ?RULE(?T(""),
 	  begin
-	      AstString = ""
+	      AstString = "",
 	      ?TO_AST(AstString)
 	  end,
 	  begin

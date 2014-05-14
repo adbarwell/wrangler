@@ -279,6 +279,11 @@ filterWeight(Input, X, Y, I, J,
     filterWeight(Input,X,Y,I,J+1, Vstep, Hstep, SumFX2, Bottom, Right, Msk);
 filterWeight(_,_,_,_,_,_,_,SumFX,_,_,_) -> 
     SumFX.
+
+test(A, B, C) ->
+    {A, B, C};
+test([], B, C) ->
+    {[], B, C}.
           
 %% filterWeight1(Input, X,Y,I,J,Vstep,Hstep, SumFX, Bottom, Right,Msk) when I =< Right ->
 %%     SumFx2 = filterWeight(Input,X,Y,I,J, Vstep, Hstep, SumFX, Bottom, Right,Msk),
