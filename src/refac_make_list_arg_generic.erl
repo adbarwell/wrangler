@@ -1,4 +1,4 @@
--module(refac_bin_wrapper).
+-module(refac_make_list_arg_generic).
 -behaviour(gen_refac).
 
 -include("../include/wrangler.hrl").
@@ -15,8 +15,8 @@
 %% Debugging 
 
 -ifndef(debug).
-%% -define(debug, true).
--define(debug, false).
+-define(debug, true).
+%% -define(debug, false).
 -endif.
 
 -ifndef(print).
@@ -29,23 +29,25 @@
 		    end).
 -endif.
 
-
 %%------------------------------------------------------------------------------
 %% Required
 
 -spec input_par_prompts() -> [string()].
 input_par_prompts() ->
     [
-     "Index of binary argument: ",
-     "Function clause: "
+     "Index of list argument: ",
+     "Function clause: ",
+     "New Argument Name: "
     ].
 
 %% -spec select_focus(_Args::#args{}) -> {ok, syntaxTree()} | {ok, none} | none.
 select_focus(_Args=#args{current_file_name = File, 
-			 user_inputs = [Index, Clause], cursor_pos = Pos}) ->
+			 user_inputs = [Index, 
+					Clause, Name], cursor_pos = Pos}) ->
     ?print(File),
     ?print(Index),
     ?print(Clause),
+    ?print(Name),
     ?print(Pos),
     case api_interface:pos_to_fun_def(File, Pos) of
 	{ok, FunDef} ->
@@ -99,14 +101,14 @@ selective() ->
 
 -spec transform(_Args::#args{}) -> {ok, syntaxTree()} | {error, string()}.
 transform(Args=#args{current_file_name = F,
-		     user_inputs = [I, C], focus_sel = S}) ->
-    ?FULL_TD_TP([first(F, list_to_integer(I), list_to_integer(C), S)], [F]).
-		     
+		     user_inputs = [I, C, N], focus_sel = S}) ->
+    ?FULL_TD_TP([first(F, list_to_integer(I), list_to_integer(C), N, S)], [F]).
+
 
 %%------------------------------------------------------------------------------
 %% Rules
 
-first(File, ArgIndex, ClauseIndex, {{M, F, A}, FunDef, Arg}) ->
+first(File, ArgIndex, ClauseIndex, ArgName, {{M, F, A}, FunDef, Arg}) ->
     ?print(first),
     ?RULE(?T("f@(Args@@@) when Guards@@@ -> Clauses@@@"),
 	  begin
@@ -114,21 +116,13 @@ first(File, ArgIndex, ClauseIndex, {{M, F, A}, FunDef, Arg}) ->
 					lists:nth(ClauseIndex, Guards@@@), 
 					lists:nth(ClauseIndex, Clauses@@@)},
 	      
-	      case Guards of
-		  [] ->
-		      ?TO_AST(lists:concat(["f@(", ?PP(Args), ") when ", 
-					    "is_binary(", ?PP(Arg), ") -> ",
-					    F, "(", innerArgs(Args, Arg), ");",
-					    original(Args@@@, Guards@@@, 
-							 Clauses@@@, "")]));
-		  _ ->
-		      ?TO_AST(lists:concat(["f@(", ?PP(Args), ") when ", 
-					    "is_binary(", ?PP(Arg), "),", 
-					    printGuards(Guards), " -> ", F, 
-					    "(", innerArgs(Args, Arg), ");",
-					    original(Args@@@, Guards@@@, 
-							 Clauses@@@, "")]))
-	      end
+	      ?TO_AST(lists:concat([original(Args@@@, Guards@@@, 
+						 Clauses@@@, ""), "f@(", 
+				    innerArgs(Args, Arg, ArgName), ")", 
+				    printGuards(Guards), " -> ", 
+				    F, "(", innerArgs(Args, Arg, ArgName), 
+				    ");"]))
+
 	  end,
 	  begin
 	      functionCheck(f@, length(hd(Args@@@)), {M, F, A})
@@ -174,13 +168,22 @@ printGuards([], Acc) ->
 printGuards([Guard | Rest], Acc) ->
     printGuards(Rest, Acc ++ ", " ++ ?PP(Guard)).
 
-innerArgs(Args, Arg) ->
-    innerArgs(Args, Arg, "").
+innerArgs(Args, Arg, Name) ->
+    innerArgs(Args, Arg, Name, "").
 
-innerArgs([], _arg, Acc) ->
+%% innerArgs([], _arg, _name, "") ->
+%%     ?print(0),
+%%     "";
+innerArgs([], _arg, _name, Acc) ->
+    ?print(1),
+    ?print(Acc),
     tl(Acc);
-innerArgs([Arg | Rest], Arg, Acc) ->
-    innerArgs(Rest, Arg, 
-	      lists:concat([Acc, ",binary_to_list(", ?PP(Arg), ")"]));
-innerArgs([A | Rest], Arg, Acc) ->
-    innerArgs(Rest, Arg, lists:concat([Acc, ",", ?PP(A)])).
+innerArgs([Arg | Rest], Arg, Name, Acc) ->
+    ?print(2),
+    ?print(Acc),
+    ?print(lists:concat([Acc, ", ", Name])),
+    innerArgs(Rest, Arg, Name,
+	      lists:concat([Acc, ", ", Name]));
+innerArgs([A | Rest], Arg, Name, Acc) ->
+    ?print(3),
+    innerArgs(Rest, Arg, Name, lists:concat([Acc, ",", ?PP(A)])).
