@@ -80,14 +80,15 @@ select_focus(_Args=#args{current_file_name = File,
     end.
 
 -spec check_pre_cond(Args::#args{}) -> ok.
-check_pre_cond(_Args=#args{current_file_name = File,
-			   user_inputs = [Index, Clause], focus_sel = Expr}) ->
-    ?print(check_pre_cond),
-    {{M, F, A}, _FunDef, Arg} = Expr,
-    ?print(M),
-    ?print(F),
-    ?print(A),
-    ?print(Arg),
+%% check_pre_cond(_Args=#args{current_file_name = File,
+%% 			   user_inputs = [Index, Clause], focus_sel = Expr}) ->
+check_pre_cond(_) ->
+    %% ?print(check_pre_cond),
+    %% {{M, F, A}, _FunDef, Arg} = Expr,
+    %% ?print(M),
+    %% ?print(F),
+    %% ?print(A),
+    %% ?print(Arg),
     ok.
 
 -spec selective() -> boolean().
