@@ -112,7 +112,7 @@ createInput(Filename) ->
 readImage(FileName) ->	
       {ok, _Img=#erl_image{format=F1, pixmaps=[PM]}} = erl_img:load(FileName),
       #erl_pixmap{pixels=Rows} =PM,
-      R = lists:map(fun({A,B}) -> B end, Rows),
+      R = lists:map(fun({A,Bin}) -> Bin end, Rows),
       {R, F1}.
 
 -spec setListElement1(non_neg_integer(), 
@@ -164,8 +164,11 @@ setElementB(I, <<E, Rest/binary>>, New) ->
 %% setElement(I, [E | Rest], New) ->
 %%     setElement(I-1, Rest, New).
 
-test([_ | Rest]) ->
-    Rest.
+%% test([_ | Rest]) ->
+%%     Rest.
+
+test(A, B, C) ->
+    ok.
 
 %% test(1, [_, Rest], New) ->
 %%     [New, Rest];
